@@ -1,6 +1,6 @@
 # Territorios Conectados
 
-Juego multijugador en el navegador para el taller de Narrativas Digitales sobre la brecha digital.
+Juego multijugador en el navegador sobre la brecha digital.
 Cada grupo vive en un territorio con distinta conexión, energía y comida. Para sobrevivir tienen que
 consultar a mano la API de Historia del Internet en Colombia, comerciar entre islas y ayudarse.
 
