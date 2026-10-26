@@ -253,7 +253,7 @@ code { font-family: ui-monospace, Consolas, monospace; background: var(--papel-2
    JUEGO: mapa, barra de recursos y paneles
    ========================================================================= */
 #juego { position: fixed; inset: 0; z-index: 2; background: #bfe4f6; }
-#juego canvas { display: block; outline: none; }
+#juego canvas { display: block; outline: none; touch-action: none; }
 #hud { position: fixed; inset: 0; z-index: 3; pointer-events: none; font-size: 16px; }
 #hud > * { pointer-events: auto; }
 .mini { padding: 6px 12px !important; font-size: .95rem !important; box-shadow: 0 3px 0 rgba(0,0,0,.15) !important; }
@@ -462,3 +462,29 @@ pre.json.chico { max-height: 220px; font-size: .82rem; white-space: pre-wrap; }
 .consulta-pasada.fallida { border-left-color: var(--coral); }
 .consulta-pasada .cabeza { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .9rem; }
 body.jugando { overflow: hidden; }
+
+/* ---------- Controles para celular y tableta ---------- */
+.palanca, .gestos-tactil { display: none; }
+body.modo-tactil .palanca {
+  display: block; position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 253, 248, .55); border: 4px solid rgba(255, 255, 255, .9);
+  box-shadow: var(--sombra-cartel); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+body.modo-tactil .palanca.activa { background: rgba(255, 253, 248, .75); }
+.palanca-perilla {
+  position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: var(--azul); border: 4px solid #fff; box-shadow: 0 4px 0 var(--azul-sombra); pointer-events: none;
+}
+body.modo-tactil .hud-gestos { display: none; }
+body.modo-tactil .hud-prompt { bottom: calc(220px + env(safe-area-inset-bottom, 0px)); cursor: pointer; touch-action: manipulation; padding: 14px 24px; }
+body.modo-tactil .hud-prompt { white-space: nowrap; max-width: calc(100% - 32px); }
+body.modo-tactil .hud-prompt kbd { display: none; }
+body.modo-tactil .hud-prompt::before { content: '👆 '; font-family: var(--f-emoji); }
+body.modo-tactil .gestos-tactil {
+  display: grid; justify-items: end; gap: 8px; position: absolute; right: max(14px, env(safe-area-inset-right, 0px));
+  bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+}
+.gestos-lista { display: grid; grid-template-columns: repeat(3, 48px); gap: 6px; background: rgba(255, 253, 248, .95); padding: 8px; border-radius: 18px; box-shadow: var(--sombra-cartel); }
+.gestos-lista[hidden] { display: none; }
+.boton-gesto { width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; background: var(--papel); font: 24px/1 var(--f-emoji); cursor: pointer; touch-action: manipulation; }
+.boton-gesto.principal { width: 56px; height: 56px; box-shadow: var(--sombra-cartel); }
