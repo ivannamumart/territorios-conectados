@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Territorios Conectados</title>
+<meta name="description" content="Juego del taller de Narrativas Digitales sobre la brecha digital.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏝️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="css/juego.css">
+</head>
+<body>
+<div id="fondo" aria-hidden="true"></div>
+
+<main id="ui">
+
+  <!-- Cargando -->
+  <section class="cartel" id="p-cargando" aria-live="polite">
+    <div class="titulo-juego"><h1>Territorios <span>Conectados</span></h1><p>Cargando el mundo…</p></div>
+  </section>
+
+  <!-- Falta configurar Supabase -->
+  <section class="cartel" id="p-sin-config" hidden>
+    <h2>Falta conectar el juego</h2>
+    <p>El juego todavía no sabe a qué base de datos conectarse. Haz esto una sola vez:</p>
+    <ol class="pasos-lista">
+      <li>Abre el archivo <code>js/config.js</code>.</li>
+      <li>Pega la <b>Project URL</b> de Supabase entre las comillas de <code>SUPABASE_URL</code>.</li>
+      <li>Pega la <b>Publishable key</b> entre las comillas de <code>SUPABASE_KEY</code>.</li>
+      <li>Guarda el archivo y recarga esta página.</li>
+    </ol>
+    <p class="subtitulo">La guía de publicación explica dónde está cada dato.</p>
+  </section>
+
+  <!-- Inicio -->
+  <section class="cartel" id="p-inicio" hidden>
+    <div class="titulo-juego">
+      <h1>Territorios <span>Conectados</span></h1>
+      <p>Cada grupo vive en un territorio distinto. ¿Lograrán sobrevivir juntos?</p>
+    </div>
+    <button class="boton grande" id="ir-crear"><span class="icono">🏝️</span> Crear un grupo nuevo</button>
+    <button class="boton grande sol" id="ir-entrar"><span class="icono">🔑</span> Entrar con el código de mi grupo</button>
+    <p class="subtitulo" style="text-align:center">¿Ya habías entrado antes? Usa el código de tu grupo y escribe tu nombre igual que la primera vez.</p>
+  </section>
+
+  <!-- Crear: paso 1 -->
+  <section class="cartel" id="p-crear-1" hidden>
+    <p class="paso">Crear grupo · Paso 1 de 2</p>
+    <h2>¿Quién eres?</h2>
+    <div class="campo">
+      <label for="crear-nombre">Tu nombre</label>
+      <input id="crear-nombre" maxlength="20" autocomplete="off" placeholder="Por ejemplo: Valentina">
+    </div>
+    <div class="campo">
+      <label id="lbl-avatar-crear">Elige tu avatar</label>
+      <div data-selector="avatar" data-destino="crear" aria-labelledby="lbl-avatar-crear"></div>
+    </div>
+    <div class="vista"><span class="etiqueta-vista">Así te verán en el mapa</span><div class="avatar" id="vista-crear"><span class="nombre">Tu nombre</span><span class="cuerpo">❔</span><span class="sombra"></span></div></div>
+    <div class="error-campo" id="error-crear-1" hidden></div>
+    <div class="fila-botones">
+      <button class="enlace" data-volver="p-inicio">← Volver</button>
+      <button class="boton" id="crear-siguiente">Siguiente →</button>
+    </div>
+  </section>
+
+  <!-- Crear: paso 2 -->
+  <section class="cartel" id="p-crear-2" hidden>
+    <p class="paso">Crear grupo · Paso 2 de 2</p>
+    <h2>Tu grupo</h2>
+    <p class="subtitulo">Eres la primera persona de tu grupo: tú eliges el nombre y el emoji.</p>
+    <div class="campo">
+      <label for="crear-grupo">Nombre del grupo</label>
+      <input id="crear-grupo" maxlength="24" autocomplete="off" placeholder="Por ejemplo: Las Ceibas">
+    </div>
+    <div class="campo">
+      <label id="lbl-emoji-grupo">Emoji del grupo</label>
+      <div data-selector="grupo" aria-labelledby="lbl-emoji-grupo"></div>
+    </div>
+    <div class="banda-grupo"><span class="emoji" id="vista-grupo-emoji">❔</span><b id="vista-grupo-nombre">Nombre del grupo</b></div>
+    <div class="error-campo" id="error-crear-2" hidden></div>
+    <div class="fila-botones">
+      <button class="enlace" data-volver="p-crear-1">← Atrás</button>
+      <button class="boton" id="crear-listo">Crear grupo</button>
+    </div>
+  </section>
+
+  <!-- Entrar con código -->
+  <section class="cartel" id="p-entrar" hidden>
+    <h2>Entrar a mi grupo</h2>
+    <div class="campo">
+      <label for="entrar-nombre">Tu nombre</label>
+      <input id="entrar-nombre" maxlength="20" autocomplete="off" placeholder="Igual que la primera vez">
+    </div>
+    <div class="campo">
+      <label for="entrar-codigo">Código del grupo</label>
+      <input id="entrar-codigo" class="codigo" maxlength="16" autocomplete="off" placeholder="MANGO-482">
+      <span class="ayuda">Te lo da la persona que creó el grupo.</span>
+    </div>
+    <div class="error-campo" id="error-entrar" hidden></div>
+    <div class="fila-botones">
+      <button class="enlace" data-volver="p-inicio">← Volver</button>
+      <button class="boton" id="entrar-listo">Entrar</button>
+    </div>
+  </section>
+
+  <!-- Entrar: elegir avatar (solo personas nuevas) -->
+  <section class="cartel" id="p-entrar-avatar" hidden>
+    <h2>¡Bienvenida, bienvenido!</h2>
+    <div class="banda-grupo"><span>Vas a unirte a</span><span class="emoji" id="unirse-emoji"></span><b id="unirse-nombre"></b></div>
+    <div class="campo">
+      <label id="lbl-avatar-entrar">Elige tu avatar</label>
+      <div data-selector="avatar" data-destino="entrar" aria-labelledby="lbl-avatar-entrar"></div>
+    </div>
+    <div class="vista"><span class="etiqueta-vista">Así te verán en el mapa</span><div class="avatar" id="vista-entrar"><span class="nombre"></span><span class="cuerpo">❔</span><span class="sombra"></span></div></div>
+    <div class="error-campo" id="error-entrar-avatar" hidden></div>
+    <div class="fila-botones">
+      <button class="enlace" data-volver="p-entrar">← Atrás</button>
+      <button class="boton" id="entrar-unirme">Unirme al grupo</button>
+    </div>
+  </section>
+
+  <!-- Revelar territorio -->
+  <section class="cartel revelar" id="p-revelar" hidden>
+    <p class="paso" id="revelar-paso">¡Grupo creado!</p>
+    <div id="revelar-codigo-caja" style="display:grid;gap:8px;justify-items:center">
+      <p>El código de tu grupo es</p>
+      <div class="codigo-grande" id="revelar-codigo"></div>
+      <p class="subtitulo">Dícteselo a tu grupo y anótenlo: con él y su nombre entran desde cualquier computador.</p>
+    </div>
+    <p id="revelar-texto">Ahora, el sorteo de su territorio…</p>
+    <div class="ruleta girando" id="ruleta">🎲</div>
+    <h2 id="revelar-territorio">&nbsp;</h2>
+    <p class="subtitulo" id="revelar-lema">&nbsp;</p>
+    <button class="boton grande" id="revelar-seguir" disabled>🗺️ ¡A jugar!</button>
+  </section>
+
+</main>
+
+
+<!-- Mundo del juego (Phaser) -->
+<div id="juego" hidden></div>
+
+<!-- Barra de recursos y avisos -->
+<div id="hud" hidden>
+  <div class="hud-yo">
+    <div class="hud-quien">
+      <span class="hud-avatar" id="hud-avatar"></span>
+      <div><b id="hud-nombre"></b><small id="hud-grupo-nombre"></small></div>
+    </div>
+    <div class="hud-barra" id="hud-energia" title="Energía"><span class="ico">⚡</span><span class="carril"><span class="relleno"></span></span><b>0</b></div>
+    <div class="hud-barra comida" id="hud-comida" title="Comida"><span class="ico">🍎</span><span class="carril"><span class="relleno"></span></span><b>0</b></div>
+    <div class="hud-contadores">
+      <span title="Megas">📶 <b id="hud-datos">0</b></span>
+      <span title="Monedas">🪙 <b id="hud-monedas">0</b></span>
+    </div>
+  </div>
+
+  <div class="hud-der">
+    <div class="reloj" id="hud-reloj">⏳</div>
+    <div class="hud-lugar"><span id="hud-lugar">🗺️ Mapa del mundo</span>
+      <span class="senal-mini" id="hud-senal" hidden><i></i><i></i><i></i><i></i></span></div>
+    <div class="hud-botones">
+      <button class="boton-hud" id="hud-misiones" title="Misiones (M)">📜<span>Misiones</span></button>
+      <button class="boton-hud" id="hud-grupo" title="Mi grupo (G)">👥<span>Grupo</span></button>
+      <button class="boton-hud" id="hud-avisos" title="Avisos">🔔<span>Avisos</span><em id="hud-avisos-n" hidden>0</em></button>
+      <button class="boton-hud" id="hud-ayuda" title="Ayuda (H)">📖<span>Ayuda</span></button>
+    </div>
+  </div>
+
+  <div class="hud-anuncio" id="hud-anuncio" hidden>📣 <span id="hud-anuncio-texto"></span></div>
+  <div class="hud-estado" id="hud-estado" hidden><span id="hud-estado-texto"></span>
+    <button class="boton sol mini" id="hud-resultados" hidden>Ver resultados</button></div>
+  <div class="hud-alertas" id="hud-alertas"></div>
+  <canvas id="hud-minimapa" width="220" height="170" aria-label="Minimapa"></canvas>
+  <div class="hud-prompt" id="hud-prompt" hidden><kbd>E</kbd> <span id="hud-prompt-texto"></span></div>
+  <div class="hud-gestos">Gestos: 1👋 2😀 3❤️ 4🆘 5👍 6🤝</div>
+  <div class="hud-aviso" id="hud-aviso" role="status" hidden></div>
+</div>
+
+<!-- Paneles de los lugares -->
+<div id="panel-capa" hidden>
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-titulo">
+    <header class="panel-cabeza">
+      <span class="panel-icono" id="panel-icono"></span>
+      <h2 id="panel-titulo"></h2>
+      <button class="panel-cerrar" id="panel-cerrar" aria-label="Cerrar">✕</button>
+    </header>
+    <div class="panel-cuerpo" id="panel-cuerpo"></div>
+  </div>
+</div>
+
+<div id="aviso" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/territorios.js"></script>
+<script src="js/mundo-datos.js"></script>
+<script src="js/servidor.js"></script>
+<script src="js/red.js"></script>
+<script src="datos/respaldo.js"></script>
+<script src="js/api.js"></script>
+<script src="js/teclado.js"></script>
+<script src="js/fondo.js"></script>
+<script src="js/juego/avatar.js"></script>
+<script src="js/juego/escena-comun.js"></script>
+<script src="js/juego/escena-mundo.js"></script>
+<script src="js/juego/escena-interior.js"></script>
+<script src="js/juego/hud.js"></script>
+<script src="js/juego/paneles.js"></script>
+<script src="js/juego/panel-archivo.js"></script>
+<script src="js/juego/panel-economia.js"></script>
+<script src="js/juego/juego.js"></script>
+<script src="js/entrada.js"></script>
+</body>
+</html>

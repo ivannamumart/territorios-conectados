@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archivo de Prueba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Concepto: una "estación de archivo" amable, como un mostrador de biblioteca en un juego. */
+:root {
+  --fondo: #e8f3ef;          /* menta suave */
+  --papel: #ffffff;
+  --tinta: #2b3445;
+  --tinta-suave: #5d6880;
+  --linea: #d3e3de;
+  --cielo: #6c8cff;          /* acento principal */
+  --cielo-suave: #e3e9ff;
+  --sol: #ffd27a;
+  --coral: #ff8f7e;
+  --coral-suave: #ffe3de;
+  --hoja: #5fbf8a;
+  --hoja-suave: #dcf3e6;
+  --codigo-fondo: #1f2638;
+  --codigo-texto: #e9edf7;
+  --f-titulo: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --f-texto: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-codigo: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --radio: 22px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--fondo); color: var(--tinta);
+  font: 500 18px/1.55 var(--f-texto);
+  padding-block: 28px 60px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.marco { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+h1, h2 { font-family: var(--f-titulo); line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; }
+h2 { font-size: 1.5rem; font-weight: 800; }
+p { margin: 0; }
+.cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.cabecera p { color: var(--tinta-suave); max-width: 60ch; margin-top: 6px; }
+.estado { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 999px; font-weight: 800; background: var(--papel); border: 2px solid var(--linea); }
+.estado .punto { width: 14px; height: 14px; border-radius: 50%; background: var(--sol); }
+.estado.si .punto { background: var(--hoja); box-shadow: 0 0 0 5px var(--hoja-suave); }
+.estado.no .punto { background: var(--coral); box-shadow: 0 0 0 5px var(--coral-suave); }
+
+.mesa { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+@media (max-width: 860px) { .mesa { grid-template-columns: 1fr; } }
+.tarjeta { background: var(--papel); border-radius: var(--radio); padding: 22px; display: grid; gap: 14px; align-content: start; min-width: 0; border: 2px solid var(--linea); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 700 0.92rem var(--f-texto); border: 2px solid var(--cielo-suave); background: var(--cielo-suave); color: var(--tinta); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.chip:hover { border-color: var(--cielo); }
+.chip:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--cielo); outline-offset: 2px; }
+
+textarea {
+  width: 100%; min-height: 220px; resize: vertical; border-radius: 16px; border: 2px solid var(--linea);
+  background: #fbfcff; color: var(--tinta); padding: 14px 16px; font: 500 1rem/1.6 var(--f-codigo); tab-size: 2;
+}
+.fila { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+label.pequeno { font-weight: 700; color: var(--tinta-suave); font-size: 0.95rem; }
+select { font: 700 1rem var(--f-texto); padding: 8px 12px; border-radius: 12px; border: 2px solid var(--linea); background: var(--papel); color: var(--tinta); }
+.boton { font: 800 1.05rem var(--f-titulo); border: 0; border-radius: 16px; padding: 12px 24px; cursor: pointer; background: var(--cielo); color: #fff; box-shadow: 0 5px 0 #4b66d6; transition: transform .1s; }
+.boton:active { transform: translateY(3px); box-shadow: 0 2px 0 #4b66d6; }
+.boton[disabled] { opacity: .6; cursor: wait; }
+.boton.suave { background: var(--sol); color: var(--tinta); box-shadow: 0 5px 0 #e0ae4c; }
+.boton.suave:active { box-shadow: 0 2px 0 #e0ae4c; }
+
+.medidas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .medidas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.medida { background: var(--fondo); border-radius: 14px; padding: 10px 12px; }
+.medida b { display: block; font: 800 1.35rem var(--f-titulo); font-variant-numeric: tabular-nums; }
+.medida span { font-size: 0.8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--tinta-suave); font-weight: 800; }
+.fuente-real b { color: var(--hoja); }
+.fuente-respaldo b { color: #c98a12; }
+
+pre.json { margin: 0; background: var(--codigo-fondo); color: var(--codigo-texto); border-radius: 16px; padding: 14px 16px; font: 0.88rem/1.55 var(--f-codigo); max-height: 420px; overflow: auto; white-space: pre; }
+.k { color: #9fc1ff; } .s { color: #ffd9a0; } .n { color: #9ff0c3; } .z { color: #ff9fb0; }
+.error { background: var(--coral-suave); color: #8a2f21; border-radius: 14px; padding: 12px 14px; font-weight: 700; }
+.nota { color: var(--tinta-suave); font-size: 0.95rem; }
+
+.barras { display: grid; gap: 10px; }
+.barra { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 5.5rem; gap: 10px; align-items: center; }
+@media (max-width: 520px) { .barra { grid-template-columns: 1fr; } }
+.barra .carril { height: 22px; background: var(--fondo); border-radius: 999px; overflow: hidden; }
+.barra .relleno { height: 100%; border-radius: 999px; background: var(--cielo); width: 0; transition: width .6s ease; }
+.barra.pesada .relleno { background: var(--coral); }
+.barra .cifra { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+
+.pruebas { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pruebas li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 8px; align-items: start; }
+.pruebas .marca { font: 800 1.2rem var(--f-titulo); text-align: center; }
+.pruebas .ok { color: var(--hoja); } .pruebas .mal { color: var(--coral); } .pruebas .esp { color: var(--tinta-suave); }
+.pruebas small { display: block; color: var(--tinta-suave); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="marco">
+
+  <header class="cabecera">
+    <div>
+      <h1>Archivo de Prueba</h1>
+      <p>Escribe una consulta a la API de Historia del Internet en Colombia y mira qué devuelve, cuánto pesa y cuánto tarda.</p>
+    </div>
+    <div id="estado" class="estado" role="status"><span class="punto"></span><span id="estadoTexto">Revisando la API…</span></div>
+  </header>
+
+  <section class="mesa">
+    <div class="tarjeta">
+      <h2>Tu consulta</h2>
+      <div class="chips" id="ejemplos" aria-label="Ejemplos"></div>
+      <label class="pequeno" for="consulta">Consulta GraphQL</label>
+      <textarea id="consulta" spellcheck="false" autocomplete="off" autocapitalize="off">{ pages { nodes { title } } }</textarea>
+      <div class="fila">
+        <button class="boton" id="enviar">Enviar consulta</button>
+        <label class="pequeno" for="modo">Fuente</label>
+        <select id="modo">
+          <option value="auto">Automática (real y, si falla, respaldo)</option>
+          <option value="real">Solo la API real</option>
+          <option value="respaldo">Solo el respaldo</option>
+        </select>
+      </div>
+      <p class="nota">Atajo: Ctrl + Enter envía la consulta.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Respuesta</h2>
+      <div class="medidas">
+        <div class="medida" id="mFuente"><span>Fuente</span><b>—</b></div>
+        <div class="medida"><span>Tiempo</span><b id="mTiempo">—</b></div>
+        <div class="medida"><span>Tamaño</span><b id="mBytes">—</b></div>
+        <div class="medida"><span>Megas</span><b id="mMegas">—</b></div>
+      </div>
+      <div id="errores" hidden></div>
+      <pre class="json" id="salida" aria-live="polite">Aquí aparecerá el JSON.</pre>
+    </div>
+  </section>
+
+  <section class="mesa">
+    <div class="tarjeta">
+      <h2>¿Cuánto ahorras pidiendo menos?</h2>
+      <p class="nota">Pide los mismos 20 eventos dos veces: una solo con <code>title</code> y <code>fecha</code>, otra con todos los campos.</p>
+      <div class="barras" id="barras">
+        <div class="barra"><span>Solo lo necesario</span><div class="carril"><div class="relleno" id="bLigera"></div></div><span class="cifra" id="cLigera">—</span></div>
+        <div class="barra pesada"><span>Todo</span><div class="carril"><div class="relleno" id="bPesada"></div></div><span class="cifra" id="cPesada">—</span></div>
+      </div>
+      <div class="fila"><button class="boton suave" id="comparar">Comparar</button><span class="nota" id="ahorro"></span></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Revisión automática</h2>
+      <p class="nota">Compara la API real con el respaldo usando las mismas consultas. Todo debe salir en verde.</p>
+      <ul class="pruebas" id="pruebas"></ul>
+      <div class="fila"><button class="boton suave" id="revisar">Revisar todo</button></div>
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Actualizar el respaldo</h2>
+    <p class="nota">Descarga una copia nueva y completa de la API. Úsalo cuando la universidad agregue datos. Guarda el archivo descargado como <code>datos/respaldo.js</code> en tu repositorio, reemplazando el anterior.</p>
+    <div class="fila"><button class="boton suave" id="descargar">Descargar respaldo actualizado</button><span class="nota" id="progreso"></span></div>
+  </section>
+
+</div>
+
+<script src="datos/respaldo.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+
+  const EJEMPLOS = [
+    ['Misión 0', '{ pages { nodes { title } } }'],
+    ['Eventos ligeros', '{\n  eventos(first: 20) {\n    nodes {\n      title\n      fecha\n    }\n  }\n}'],
+    ['Eventos pesados', '{\n  eventos(first: 20) {\n    nodes {\n      title\n      slug\n      fecha\n      tipo\n      content\n      categories { nodes { name } }\n    }\n  }\n}'],
+    ['Paginación', '{\n  terminos(first: 100) {\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    nodes {\n      title\n    }\n  }\n}'],
+    ['Buscar', '{\n  eventos(first: 20, where: { search: "satelital" }) {\n    nodes {\n      title\n      fecha\n      tipo\n    }\n  }\n}'],
+    ['Personaje', '{\n  personajeBy(slug: "hugo-sin-triana") {\n    title\n    entrevistas {\n      nodes {\n        title\n        fecha\n      }\n    }\n  }\n}'],
+    ['Error a propósito', '{ eventos(first: 3) { nodes { titulo } } }']
+  ];
+  EJEMPLOS.forEach(([nombre, q]) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button'; b.textContent = nombre;
+    b.addEventListener('click', () => { $('consulta').value = q; $('consulta').focus(); });
+    $('ejemplos').appendChild(b);
+  });
+
+  // Colorea el JSON para leerlo mejor
+  function colorear(texto) {
+    const esc = texto.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return esc.replace(/("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?)/g, m => {
+      if (/^"/.test(m)) return /:$/.test(m) ? '<span class="k">' + m + '</span>' : '<span class="s">' + m + '</span>';
+      if (/true|false|null/.test(m)) return '<span class="z">' + m + '</span>';
+      return '<span class="n">' + m + '</span>';
+    });
+  }
+  const kb = b => b < 1024 ? b + ' B' : (b / 1024).toFixed(1) + ' KB';
+
+  async function enviar() {
+    const boton = $('enviar');
+    boton.disabled = true; boton.textContent = 'Consultando…';
+    try {
+      const r = await HistoriaAPI.consultar($('consulta').value, { modo: $('modo').value });
+      $('mFuente').className = 'medida fuente-' + r.fuente;
+      $('mFuente').querySelector('b').textContent = r.fuente === 'real' ? 'API real' : 'Respaldo';
+      $('mTiempo').textContent = r.ms + ' ms';
+      $('mBytes').textContent = kb(r.bytesDatos);
+      $('mMegas').textContent = r.ok ? HistoriaAPI.bytesAMegas(r.bytesDatos) : '0';
+      const caja = $('errores');
+      if (r.errores.length) {
+        caja.hidden = false; caja.className = 'error';
+        caja.textContent = 'La API dice: ' + r.errores.join(' · ');
+      } else caja.hidden = true;
+      $('salida').innerHTML = r.texto ? colorear(r.texto) : 'Sin respuesta.';
+    } catch (e) {
+      $('errores').hidden = false; $('errores').className = 'error';
+      $('errores').textContent = 'No se pudo consultar: ' + (e.message || e);
+    } finally {
+      boton.disabled = false; boton.textContent = 'Enviar consulta';
+    }
+  }
+  $('enviar').addEventListener('click', enviar);
+  $('consulta').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); enviar(); } });
+
+  // Comparación ligera vs pesada
+  $('comparar').addEventListener('click', async () => {
+    const modo = $('modo').value;
+    const ligera = await HistoriaAPI.consultar(EJEMPLOS[1][1], { modo });
+    const pesada = await HistoriaAPI.consultar(EJEMPLOS[2][1], { modo });
+    const max = Math.max(ligera.bytesDatos, pesada.bytesDatos, 1);
+    $('bLigera').style.width = (100 * ligera.bytesDatos / max) + '%';
+    $('bPesada').style.width = (100 * pesada.bytesDatos / max) + '%';
+    $('cLigera').textContent = kb(ligera.bytesDatos);
+    $('cPesada').textContent = kb(pesada.bytesDatos);
+    const pct = Math.round(100 * (1 - ligera.bytesDatos / max));
+    $('ahorro').textContent = 'Pidiendo solo lo necesario gastas ' + pct + '% menos. (Fuente: ' + (ligera.fuente === 'real' ? 'API real' : 'respaldo') + ')';
+  });
+
+  // Revisión automática real vs respaldo
+  const PRUEBAS = [
+    ['La API acepta la Misión 0', '{ pages { nodes { title } } }', d => d.pages.nodes.length],
+    ['Hay 102 eventos (se necesitan 2 páginas)', null, null],
+    ['Sin "first" llegan 10 eventos', '{ eventos { nodes { title } } }', d => d.eventos.nodes.length],
+    ['"first: 1000" se corta en 100', '{ eventos(first: 1000) { nodes { slug } } }', d => d.eventos.nodes.length],
+    ['Búsqueda por texto igual', '{ eventos(first: 50, where: { search: "bitnet" }) { nodes { slug } } }', d => d.eventos.nodes.map(n => n.slug).join('|')],
+    ['Personaje y su entrevista igual', '{ personajeBy(slug: "hugo-sin-triana") { title entrevistas { nodes { title fecha } } } }', d => JSON.stringify(d)],
+    ['Error por campo mal escrito', '{ eventos(first: 2) { nodes { titulo } } }', null]
+  ];
+  async function contarTodo(modo) {
+    let after = null, n = 0, paginas = 0;
+    do {
+      const r = await HistoriaAPI.consultar('{ eventos(first: 100' + (after ? ', after: "' + after + '"' : '') + ') { pageInfo { hasNextPage endCursor } nodes { slug } } }', { modo });
+      if (!r.ok) throw new Error(r.errores[0]);
+      n += r.json.data.eventos.nodes.length; paginas++;
+      after = r.json.data.eventos.pageInfo.hasNextPage ? r.json.data.eventos.pageInfo.endCursor : null;
+    } while (after && paginas < 10);
+    return n + ' en ' + paginas + ' páginas';
+  }
+  function pintarPruebas(estados) {
+    $('pruebas').innerHTML = '';
+    PRUEBAS.forEach(([nombre], i) => {
+      const s = estados[i] || { marca: '·', clase: 'esp', detalle: 'Pendiente' };
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="marca ' + s.clase + '">' + s.marca + '</span><span><b></b><small></small></span>';
+      li.querySelector('b').textContent = nombre;
+      li.querySelector('small').textContent = s.detalle;
+      $('pruebas').appendChild(li);
+    });
+  }
+  pintarPruebas([]);
+  $('revisar').addEventListener('click', async () => {
+    const boton = $('revisar'); boton.disabled = true;
+    const estados = [];
+    for (let i = 0; i < PRUEBAS.length; i++) {
+      const [, q, f] = PRUEBAS[i];
+      estados[i] = { marca: '…', clase: 'esp', detalle: 'Probando…' }; pintarPruebas(estados);
+      try {
+        let real, resp;
+        if (i === 1) { real = await contarTodo('real'); resp = await contarTodo('respaldo'); }
+        else {
+          const a = await HistoriaAPI.consultar(q, { modo: 'real' });
+          const b = await HistoriaAPI.consultar(q, { modo: 'respaldo' });
+          if (!f) { real = a.errores.length ? 'error' : 'sin error'; resp = b.errores.length ? 'error' : 'sin error'; }
+          else {
+            if (!a.ok) throw new Error('API real: ' + a.errores[0]);
+            if (!b.ok) throw new Error('Respaldo: ' + b.errores[0]);
+            real = f(a.json.data); resp = f(b.json.data);
+          }
+        }
+        const igual = String(real) === String(resp);
+        const corto = v => { v = String(v); return v.length > 50 ? v.slice(0, 50) + '…' : v; };
+        estados[i] = { marca: igual ? '✓' : '≠', clase: igual ? 'ok' : 'mal', detalle: igual ? 'Real y respaldo: ' + corto(real) : 'Real: ' + corto(real) + ' · Respaldo: ' + corto(resp) };
+      } catch (e) {
+        estados[i] = { marca: '!', clase: 'mal', detalle: e.message || String(e) };
+      }
+      pintarPruebas(estados);
+    }
+    boton.disabled = false;
+  });
+
+  // Descargar respaldo
+  $('descargar').addEventListener('click', async () => {
+    const boton = $('descargar'); boton.disabled = true;
+    try {
+      const datos = await HistoriaAPI.generarRespaldoCompleto((tipo, n) => { $('progreso').textContent = 'Descargando ' + tipo + ': ' + n + '…'; });
+      const blob = new Blob([HistoriaAPI.respaldoComoArchivoJS(datos)], { type: 'text/javascript' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'respaldo.js';
+      document.body.appendChild(a); a.click(); a.remove();
+      $('progreso').textContent = 'Listo: se descargó respaldo.js (' + kb(blob.size) + ').';
+    } catch (e) {
+      $('progreso').textContent = 'No se pudo: ' + (e.message || e) + '. Revisa tu conexión e intenta otra vez.';
+    } finally { boton.disabled = false; }
+  });
+
+  // Estado de la API al abrir
+  HistoriaAPI.apiDisponible().then(ok => {
+    $('estado').classList.add(ok ? 'si' : 'no');
+    $('estadoTexto').textContent = ok ? 'API real conectada' : 'API sin respuesta: se usa el respaldo';
+  });
+})();
+</script>
+</body>
+</html>

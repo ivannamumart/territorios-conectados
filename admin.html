@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel Docente</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="css/juego.css">
+<link rel="stylesheet" href="css/panel.css">
+</head>
+<body class="panel-docente">
+
+<!-- Entrada -->
+<main id="p-login" class="login">
+  <section class="cartel">
+    <div class="titulo-juego"><h1>Panel <span>Docente</span></h1><p>Territorios Conectados</p></div>
+    <div class="campo"><label for="usuario">Usuario</label><input id="usuario" autocomplete="username"></div>
+    <div class="campo"><label for="clave">Contraseña</label><input id="clave" type="password" autocomplete="current-password"></div>
+    <div class="error-campo" id="error-login" hidden></div>
+    <button class="boton grande" id="entrar">Entrar al panel</button>
+    <p class="subtitulo" style="text-align:center"><a href="index.html">← Volver al juego</a></p>
+  </section>
+</main>
+
+<!-- Panel -->
+<div id="p-panel" hidden>
+  <header class="barra-panel">
+    <div class="marca">🧭 <b>Panel Docente</b> <span class="rol" id="rol"></span></div>
+    <div class="reloj-panel" id="reloj-panel"></div>
+    <nav class="pestanas-panel" id="pestanas" role="tablist">
+      <button role="tab" data-p="vivo" aria-selected="true">📡 En vivo</button>
+      <button role="tab" data-p="controles">🎛️ Controles</button>
+      <button role="tab" data-p="grupos">👥 Grupos</button>
+      <button role="tab" data-p="consultas">🔎 Consultas <em id="n-marcadas" hidden></em></button>
+      <button role="tab" data-p="comercio">🤝 Comercio</button>
+      <button role="tab" data-p="reporte">📄 Reporte</button>
+      <button role="tab" data-p="cuenta">⚙️ Cuenta</button>
+    </nav>
+  </header>
+
+  <main class="contenido-panel">
+    <!-- EN VIVO -->
+    <section data-seccion="vivo">
+      <div class="resumen" id="resumen"></div>
+      <div class="dos-columnas">
+        <div class="caja"><h2>Mapa en vivo</h2><canvas id="mapa-vivo" width="900" height="700"></canvas>
+          <p class="subtitulo">Cada punto es una persona (posición de su última señal, cada 30–75 s). Los números sobre los edificios son quienes están adentro.</p></div>
+        <div class="caja"><h2>Ranking</h2><div id="ranking-vivo" class="ranking"></div></div>
+      </div>
+      <div class="tres-columnas">
+        <div class="caja"><h2>🆘 En rescate</h2><div id="lista-rescate" class="lista-gente"></div></div>
+        <div class="caja"><h2>👻 Fantasmas</h2><div id="lista-muertos" class="lista-gente"></div></div>
+        <div class="caja"><h2>📜 Lo último que pasó</h2><ul id="bitacora" class="bitacora"></ul></div>
+      </div>
+    </section>
+
+    <!-- CONTROLES -->
+    <section data-seccion="controles" hidden>
+      <p class="solo-lectura" hidden>👀 Tu usuario puede ver estos ajustes, pero solo la profesora los cambia.</p>
+      <div class="dos-columnas">
+        <div class="caja">
+          <h2>⏱ Tiempo de juego</h2>
+          <p class="estado-reloj" id="estado-reloj"></p>
+          <div class="fila-controles">
+            <div class="campo"><label for="min-clase">Minutos de la sesión</label><input id="min-clase" type="number" min="5" max="600" value="90"></div>
+            <button class="boton solo-admin" data-reloj="iniciar">▶ Iniciar</button>
+            <button class="boton solo-admin" data-reloj="reanudar">▶ Reanudar</button>
+            <button class="boton sol solo-admin" data-reloj="pausar">⏸ Pausar</button>
+            <button class="boton suave solo-admin" data-reloj="sumar">+ Sumar minutos</button>
+          </div>
+          <h3>🏠 Jugar desde la casa</h3>
+          <p class="subtitulo">Cuando termine la sesión en clase, el juego puede seguir corriendo hasta la fecha que elijas, o quedar en pausa hasta la próxima clase.</p>
+          <div class="fila-controles">
+            <div class="campo"><label for="casa-hasta">Seguir hasta</label><input id="casa-hasta" type="datetime-local"></div>
+            <div class="campo"><span class="rotulo-campo">Fuera de clase el juego…</span>
+              <label class="opcion"><input type="radio" name="fuera" value="corre"> sigue corriendo</label>
+              <label class="opcion"><input type="radio" name="fuera" value="pausa" checked> queda en pausa</label></div>
+            <button class="boton suave solo-admin" data-reloj="casa">Guardar</button>
+          </div>
+          <h3>🏁 Terminar el juego</h3>
+          <div class="fila-controles">
+            <button class="boton coral solo-admin" id="terminar-1">Terminar y ver resultados</button>
+            <span class="confirmar-inline" id="terminar-2" hidden>¿Seguro? Ya no se podrá seguir jugando.
+              <button class="boton coral mini" data-reloj="terminar">Sí, terminar</button>
+              <button class="boton suave mini" id="terminar-no">Cancelar</button></span>
+          </div>
+        </div>
+        <div class="caja">
+          <h2>🎚️ Dificultad</h2>
+          <div class="deslizador"><label for="d-desgaste">Velocidad a la que bajan energía y comida <b id="v-desgaste"></b></label>
+            <input id="d-desgaste" type="range" min="0.3" max="3" step="0.1"><span class="extremos"><span>Lento</span><span>Rápido</span></span></div>
+          <div class="deslizador"><label for="d-precios">Precios del mercado y la antena <b id="v-precios"></b></label>
+            <input id="d-precios" type="range" min="0.3" max="3" step="0.1"><span class="extremos"><span>Baratos</span><span>Caros</span></span></div>
+          <div class="deslizador"><label for="d-megas">Costo de los megas en el Archivo <b id="v-megas"></b></label>
+            <input id="d-megas" type="range" min="0.3" max="3" step="0.1"><span class="extremos"><span>Barato</span><span>Caro</span></span></div>
+          <div class="fila-controles">
+            <div class="campo"><label for="d-misiones">Misiones</label>
+              <select id="d-misiones"><option value="facil">Fácil (con la consulta de pista)</option><option value="media">Media (pistas cortas)</option><option value="dificil">Difícil (sin pistas)</option></select></div>
+            <div class="campo"><label for="d-rescate">Minutos para rescatar</label><input id="d-rescate" type="number" min="1" max="240"></div>
+          </div>
+          <h3>Inscripción y mundo</h3>
+          <div class="fila-controles">
+            <label class="opcion"><input type="checkbox" id="d-inscripcion"> Inscripción abierta</label>
+            <div class="campo"><label for="d-grupos">Máximo de grupos</label><input id="d-grupos" type="number" min="1" max="9"></div>
+            <div class="campo"><label for="d-porgrupo">Personas por grupo</label><input id="d-porgrupo" type="number" min="1" max="12"></div>
+            <div class="campo"><label for="d-mov">Movimiento en el mapa</label>
+              <select id="d-mov"><option value="normal">Normal</option><option value="ahorro">Ahorro (menos mensajes)</option><option value="apagado">Apagado en el mapa</option></select></div>
+          </div>
+          <div class="campo"><label for="d-anuncio">Anuncio para todos (aparece arriba en el juego)</label><input id="d-anuncio" maxlength="200" placeholder="Ej.: ¡Quedan 10 minutos! Ayuden a quienes están en rescate."></div>
+          <button class="boton grande solo-admin" id="guardar-config">Guardar ajustes</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRUPOS -->
+    <section data-seccion="grupos" hidden>
+      <div id="grupos-lista" class="grupos-lista"></div>
+    </section>
+
+    <!-- CONSULTAS -->
+    <section data-seccion="consultas" hidden>
+      <div class="dos-columnas">
+        <div class="caja"><h2>🚩 Consultas marcadas</h2>
+          <p class="subtitulo">El juego marca una consulta cuando el texto apareció de golpe, con menos teclas de las necesarias o con un ritmo que no parece humano. Revísalas con criterio: es una alerta, no una prueba.</p>
+          <div id="marcadas" class="lista-consultas"></div></div>
+        <div class="caja"><h2>🗂️ Historial por estudiante</h2>
+          <div class="campo"><label for="ver-estudiante">Estudiante</label><select id="ver-estudiante"></select></div>
+          <div id="historial" class="lista-consultas"></div></div>
+      </div>
+    </section>
+
+    <!-- COMERCIO -->
+    <section data-seccion="comercio" hidden>
+      <div class="caja"><h2>Ofertas en las plazas</h2><div id="ofertas" class="tabla-scroll"></div></div>
+    </section>
+
+    <!-- REPORTE -->
+    <section data-seccion="reporte" hidden>
+      <div class="caja">
+        <h2>📄 Reporte por estudiante</h2>
+        <p>Descarga un archivo CSV que abre en Excel o Google Sheets: grupo, territorio, recursos finales, misiones, megas gastados, consultas, intercambios, ayudas, si murió, cuándo, por qué y quiénes pudieron ayudar.</p>
+        <div class="fila-controles">
+          <button class="boton grande" id="descargar-csv">⬇ Descargar reporte CSV</button>
+          <a class="boton grande sol" href="final.html" target="_blank" rel="noopener">🏁 Abrir pantalla final</a>
+        </div>
+        <div id="vista-reporte" class="tabla-scroll"></div>
+      </div>
+    </section>
+
+    <!-- CUENTA -->
+    <section data-seccion="cuenta" hidden>
+      <div class="dos-columnas">
+        <div class="caja">
+          <h2>🔑 Cambiar mi contraseña</h2>
+          <div class="campo"><label for="clave-actual">Contraseña actual</label><input id="clave-actual" type="password" autocomplete="current-password"></div>
+          <div class="campo"><label for="clave-nueva">Nueva contraseña (mínimo 8)</label><input id="clave-nueva" type="password" autocomplete="new-password"></div>
+          <button class="boton" id="cambiar-clave">Cambiar contraseña</button>
+          <hr>
+          <button class="boton suave" id="salir">Salir del panel</button>
+        </div>
+        <div class="caja solo-admin-caja">
+          <h2>♻️ Reiniciar el mundo</h2>
+          <p>Borra todos los grupos, jugadores, consultas, ofertas y muertes, y deja el juego esperando. Las cuentas del equipo docente se conservan. <b>No se puede deshacer:</b> descarga antes el reporte.</p>
+          <div class="campo"><label for="palabra-reinicio">Escribe REINICIAR para confirmar</label><input id="palabra-reinicio" autocomplete="off"></div>
+          <button class="boton coral" id="reiniciar">Reiniciar el mundo</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="aviso" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/territorios.js"></script>
+<script src="js/mundo-datos.js"></script>
+<script src="js/servidor.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
