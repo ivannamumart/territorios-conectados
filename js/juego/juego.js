@@ -377,6 +377,8 @@
     prompt: t => HUD.prompt(t),
     sumarDistancia: d => { J.distancia += d; },
     /** ¿Se presionó E/Enter/Espacio hace poco? (se consume una sola vez) */
+    tocarUsar: () => { if (!Paneles.abierto()) J.pedidoUsar = Date.now(); },
+    gesto: em => { if (J.escenaActiva && J.escenaActiva.yo) { J.escenaActiva.yo.mostrarEmote(em); Red.emote(em); } },
     consumirUsar: () => { const ok = J.pedidoUsar && Date.now() - J.pedidoUsar < 600; J.pedidoUsar = 0; return !!ok; },
     posicionInicial, alEntrarEscena, unirseCanal, entrarLugar, salirLugar, usarEstacion
   };

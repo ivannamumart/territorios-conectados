@@ -15,7 +15,9 @@
   }
 
   function direccion(teclas) {
-    if (window.Juego && Juego.panelAbierto()) return { dx: 0, dy: 0 };
+    if (window.Juego && Juego.panelAbierto()) { if (window.Tactil) Tactil.soltar(); return { dx: 0, dy: 0 }; }
+    const t = window.Tactil && Tactil.direccion();
+    if (t) return t;
     const izq = teclas.LEFT.isDown || teclas.A.isDown;
     const der = teclas.RIGHT.isDown || teclas.D.isDown;
     const arr = teclas.UP.isDown || teclas.W.isDown;
