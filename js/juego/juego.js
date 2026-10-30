@@ -224,7 +224,9 @@
         const islasAntes = J.grupos.map(g => g.isla + ':' + g.territorio).sort().join();
         try { await cargarGrupos(); } catch (e) { return; }
         const mio = J.gruposPorId.get(J.estado.grupo.id);
-        if (mio && mio.oportunidades !== J.estado.grupo.oportunidades) {
+        // Si la profe reinició el mundo, mi grupo ya no existe: volver a la entrada
+        if (!mio) { aviso('La profe reinició el mundo. Vuelve a crear tu grupo o entra con el nuevo código.', 'alerta'); setTimeout(() => location.reload(), 2500); return; }
+        if (mio.oportunidades !== J.estado.grupo.oportunidades) {
           J.estado.grupo.oportunidades = mio.oportunidades;
           Paneles.refrescar('texto');
         }
