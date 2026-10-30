@@ -62,77 +62,71 @@
     caja.innerHTML = '';
     const rk = r.ranking;
     $('subtitulo').textContent = r.estado === 'terminado' ? 'El juego terminó. Esto fue lo que pasó en el mundo.' : 'Vista previa para el equipo docente (el juego aún no termina).';
-
     if (!rk.length) { caja.appendChild(el('p', { class: 'caja', text: 'Aún no hay grupos en el mundo.' })); return; }
 
     const g1 = rk[0], t1 = window.TERRITORIOS[g1.territorio];
     caja.appendChild(el('section', { class: 'ganador' },
       el('span', { class: 'copa', text: '🏆' }),
-      el('div', {}, el('p', { class: 'paso', text: 'Grupo ganador' }),
+      el('div', {}, el('p', { class: 'paso', text: g1.completo_en ? 'Primer grupo en completar su texto' : 'El grupo que más huecos llenó' }),
         el('h2', {}, el('span', { class: 'emoji-grupo', text: g1.emoji }), ' ', g1.nombre),
-        el('p', { text: t1.emoji + ' ' + t1.nombre + ' · ' + g1.vivos + ' sobrevivieron · ' + g1.muertos + ' fantasmas · ' + g1.misiones + (g1.misiones === 1 ? ' misión resuelta' : ' misiones resueltas') })),
-      el('div', { class: 'pts' }, Math.round(g1.puntaje), el('small', { text: 'puntos' }))));
+        el('p', { text: t1.emoji + ' ' + t1.nombre + ' · tema ' + g1.tema + ' · ' + g1.fallos + (Number(g1.fallos) === 1 ? ' palabra fallada' : ' palabras falladas') })),
+      el('div', { class: 'pts' }, g1.resueltos + '/18', el('small', { text: 'huecos' }))));
 
-    const podio = el('section', { class: 'podio' }, el('h2', { text: 'Ranking de los grupos' }));
+    const podio = el('section', { class: 'podio' }, el('h2', { text: 'Cómo terminó cada grupo' }));
     rk.forEach((g, i) => {
       const t = window.TERRITORIOS[g.territorio];
       const gente = el('div', { class: 'gente' });
-      g.integrantes.forEach(p => gente.appendChild(el('span', { class: p.estado === 'fantasma' ? 'muerto' : '', title: p.estado === 'fantasma' ? 'Murió ' + (p.causa || '') : 'Sobrevivió', text: (p.estado === 'fantasma' ? '👻 ' : p.avatar + ' ') + p.nombre })));
+      g.integrantes.forEach(p => gente.appendChild(el('span', { title: p.huecos + ' huecos', text: p.avatar + ' ' + p.nombre + ' · ' + p.huecos })));
       podio.appendChild(el('div', { class: 'fila-final' },
         el('span', { class: 'pos', text: ['🥇', '🥈', '🥉'][i] || String(i + 1) }),
         el('span', { class: 'emoji', text: g.emoji }),
         el('div', { class: 'nom' }, el('b', { text: g.nombre }),
-          el('small', { text: t.emoji + ' ' + t.nombre + ' · sobrevivieron ' + g.vivos + ' de ' + (g.vivos + g.muertos) + ' · ' + g.misiones + (g.misiones === 1 ? ' misión' : ' misiones') }), gente),
-        el('span', { class: 'pts', text: Math.round(g.puntaje) })));
+          el('small', { text: t.emoji + ' ' + t.nombre + ' · tema ' + g.tema + ' · ' + g.consultas + ' consultas · ' + g.fallos + ' fallos · ' + g.oport_armadas + ' 🎟️ armadas' + (g.completo_en ? ' · 🏆 completo' : '') }), gente),
+        el('span', { class: 'pts', text: g.resueltos + '/18' })));
     });
-    podio.appendChild(el('p', { class: 'subtitulo', text: 'Puntaje = monedas + energía + comida + megas ÷ 5 + 25 por misión. Los fantasmas solo suman sus misiones.' }));
+    podio.appendChild(el('p', { class: 'subtitulo', text: 'Gana el primer grupo en completar su texto. Si nadie lo completa, gana el que más huecos llenó (y en empate, el que falló menos).' }));
     caja.appendChild(podio);
+
+    // Las ideas de cada texto (para la reflexión individual)
+    const ideas = el('section', { class: 'caja' }, el('h2', { text: '💡 Lo que dice cada texto' }));
+    const lista = el('ol', { class: 'preguntas' });
+    (r.textos || []).forEach(tx => lista.appendChild(el('li', {},
+      el('b', { text: tx.emoji + ' ' + tx.grupo + ' · ' + tx.pregunta + ' ' }),
+      tx.completo || r.estado === 'terminado' ? tx.idea : '(se revela cuando completen el texto)')));
+    ideas.appendChild(lista);
+    caja.appendChild(ideas);
 
     const ter = r.territorios.filter(t => t.personas > 0);
     const et = t => { const x = window.TERRITORIOS[t.id]; return x.emoji + ' ' + x.nombre; };
-    const graficos = el('section', { class: 'dos-columnas' });
-    graficos.appendChild(barras('🎁 Recursos que regaló cada territorio', ter.map(t => ({ etiqueta: et(t), valor: Number(t.recursos_regalados) })), 'unidades',
-      'Suma de energía, comida, megas y monedas que sus integrantes enviaron a otras personas.'));
-    graficos.appendChild(barras('🤝 Ayudas que dio cada territorio', ter.map(t => ({ etiqueta: et(t), valor: Number(t.ayudas) })), 'envíos',
-      'Cuántas veces sus integrantes enviaron recursos. Rescates logrados: ' + ter.map(t => window.TERRITORIOS[t.id].emoji + ' ' + t.rescates).join('  ·  ')));
-    caja.appendChild(graficos);
+    const brecha = el('section', { class: 'dos-columnas' });
+    brecha.appendChild(barras('⚡ Energía gastada por consulta', ter.map(t => ({ etiqueta: et(t), valor: t.consultas ? Math.round(t.energia_consultas / t.consultas * 10) / 10 : 0 })), 'energía por consulta',
+      'La misma pregunta no cuesta lo mismo en todos los territorios.'));
+    brecha.appendChild(barras('📜 Huecos llenos por territorio', ter.map(t => ({ etiqueta: et(t), valor: Number(t.huecos) })), 'huecos'));
+    caja.appendChild(brecha);
+
+    const coop = el('section', { class: 'dos-columnas' });
+    coop.appendChild(barras('🤝 Intercambios por territorio', ter.map(t => ({ etiqueta: et(t), valor: Number(t.intercambios) })), 'intercambios',
+      'Cuántos tratos hicieron sus integrantes en el Mercado Central.'));
+    coop.appendChild(barras('🎁 Envíos a otras personas', ter.map(t => ({ etiqueta: et(t), valor: Number(t.ayudas) })), 'envíos',
+      'Cuántas veces sus integrantes regalaron energía o productos.'));
+    caja.appendChild(coop);
 
     const a = r.api;
     const api = el('section', { class: 'caja' }, el('h2', { text: '🔎 Lo que pasó con la API' }));
     const datos = el('div', { class: 'datos-api' });
-    [[a.consultas, 'consultas hechas'], [a.megas, 'megas gastados'], [a.kb_promedio + ' KB', 'tamaño medio de una respuesta'],
-     [a.con_error, 'consultas con error'], [a.cortes, 'cortes de señal'], [a.con_content, 'consultas que pidieron content'],
-     [a.misiones, 'misiones resueltas'], [a.marcadas, 'consultas marcadas']].forEach(([n, t]) => datos.appendChild(el('div', { class: 'dato' }, el('b', { text: n }), el('span', { text: t }))));
+    [[a.consultas, 'consultas hechas'], ['⚡' + a.energia, 'energía gastada en consultas'], [a.kb_promedio + ' KB', 'tamaño medio de una respuesta'],
+     [a.con_error, 'consultas con error'], [a.cortes, 'cortes de señal'], [a.aciertos + ' de ' + a.intentos, 'palabras acertadas'],
+     [a.intercambios, 'intercambios'], [a.oportunidades_armadas, 'oportunidades armadas']].forEach(([n, t]) => datos.appendChild(el('div', { class: 'dato' }, el('b', { text: n }), el('span', { text: t }))));
     api.appendChild(datos);
-    if (a.mas_liviana) api.appendChild(el('div', {}, el('h3', { text: '🪶 La consulta más liviana que funcionó (' + a.mas_liviana.bytes + ' bytes, de ' + a.mas_liviana.nombre + ')' }), el('pre', { class: 'json chico', text: a.mas_liviana.texto })));
     caja.appendChild(api);
-
-    const megasPorConsulta = ter.map(t => ({ etiqueta: et(t), valor: t.consultas ? Math.round(t.megas / t.consultas * 10) / 10 : 0 }));
-    const brecha = el('section', { class: 'dos-columnas' });
-    brecha.appendChild(barras('📶 Megas gastados por consulta', megasPorConsulta, 'megas por consulta',
-      'La misma pregunta no cuesta lo mismo en todos los territorios.'));
-    brecha.appendChild(barras('📜 Misiones resueltas por territorio', ter.map(t => ({ etiqueta: et(t), valor: Number(t.misiones) })), 'misiones'));
-    caja.appendChild(brecha);
-
-    const muertes = el('section', { class: 'caja' }, el('h2', { text: '👻 Quiénes no sobrevivieron' }));
-    if (!r.muertes.length) muertes.appendChild(el('p', { text: '¡Nadie murió! Todo el mundo sobrevivió.' }));
-    else {
-      const t = el('table', { class: 'tabla-panel' }, el('tr', {}, ...['Quién', 'Grupo', 'Hora', 'Causa', 'Pudieron ayudar'].map(h => el('th', { text: h }))));
-      r.muertes.forEach(m => t.appendChild(el('tr', {},
-        el('td', { text: m.avatar + ' ' + m.nombre }), el('td', { text: m.grupo }),
-        el('td', { text: new Date(m.momento).toLocaleString('es-CO', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) }),
-        el('td', { text: m.causa }), el('td', { text: (m.pudieron_ayudar || []).join(', ') || 'nadie estaba en línea' }))));
-      muertes.appendChild(el('div', { class: 'tabla-scroll' }, t));
-    }
-    caja.appendChild(muertes);
 
     caja.appendChild(el('section', { class: 'caja' }, el('h2', { text: '💬 Para conversar' }),
       el('ol', { class: 'preguntas' },
-        el('li', { text: '¿Qué territorio la tuvo más fácil y cuál más difícil? ¿Por qué?' }),
-        el('li', { text: '¿Quién gastó más megas por pregunta? ¿Se parece a algo que pase en Colombia?' }),
-        el('li', { text: '¿Quiénes ayudaron más? ¿Tiene que ver con tener más o con tener comunidad?' }),
-        el('li', { text: '¿Alguien murió teniendo compañeros en línea? ¿Qué pasó ahí?' }),
-        el('li', { text: '¿Qué aprendieron sobre pedir solo los datos que necesitan?' }))));
+        el('li', { text: '¿Todos tuvimos las mismas oportunidades de investigar? ¿Qué territorio la tuvo más fácil y cuál más difícil?' }),
+        el('li', { text: '¿Quién gastó más energía por consulta? ¿Se parece a algo que pase en Colombia?' }),
+        el('li', { text: '¿Qué tuvieron que hacer cuando se quedaron sin oportunidades? ¿De quién dependieron?' }),
+        el('li', { text: '¿Qué pudimos descubrir y qué quedó fuera de nuestro alcance?' }),
+        el('li', { text: '¿Cómo se conecta la idea de su texto con la de los otros grupos?' }))));
   }
 
   async function cargar() {

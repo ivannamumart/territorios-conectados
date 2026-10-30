@@ -38,7 +38,7 @@
   <section class="cartel" id="p-inicio" hidden>
     <div class="titulo-juego">
       <h1>Territorios <span>Conectados</span></h1>
-      <p>Cada grupo vive en un territorio distinto. ¿Lograrán sobrevivir juntos?</p>
+      <p>Cada grupo vive en un territorio distinto y tiene un texto con huecos sobre la historia del internet en Colombia. ¿Lograrán completarlo?</p>
     </div>
     <button class="boton grande" id="ir-crear"><span class="icono">🏝️</span> Crear un grupo nuevo</button>
     <button class="boton grande sol" id="ir-entrar"><span class="icono">🔑</span> Entrar con el código de mi grupo</button>
@@ -150,11 +150,11 @@
       <div><b id="hud-nombre"></b><small id="hud-grupo-nombre"></small></div>
     </div>
     <div class="hud-barra" id="hud-energia" title="Energía"><span class="ico">⚡</span><span class="carril"><span class="relleno"></span></span><b>0</b></div>
-    <div class="hud-barra comida" id="hud-comida" title="Comida"><span class="ico">🍎</span><span class="carril"><span class="relleno"></span></span><b>0</b></div>
     <div class="hud-contadores">
-      <span title="Megas">📶 <b id="hud-datos">0</b></span>
-      <span title="Monedas">🪙 <b id="hud-monedas">0</b></span>
+      <span title="Oportunidades del grupo para probar palabras">🎟️ <b id="hud-oport">0</b></span>
+      <span title="Huecos llenos del texto del grupo">📜 <b id="hud-huecos">0</b>/18</span>
     </div>
+    <div class="hud-bolsa" id="hud-bolsa" title="Tus productos"></div>
   </div>
 
   <div class="hud-der">
@@ -162,7 +162,7 @@
     <div class="hud-lugar"><span id="hud-lugar">🗺️ Mapa del mundo</span>
       <span class="senal-mini" id="hud-senal" hidden><i></i><i></i><i></i><i></i></span></div>
     <div class="hud-botones">
-      <button class="boton-hud" id="hud-misiones" title="Misiones (M)">📜<span>Misiones</span></button>
+      <button class="boton-hud" id="hud-misiones" title="Texto del grupo (M)">📜<span>Texto</span></button>
       <button class="boton-hud" id="hud-grupo" title="Mi grupo (G)">👥<span>Grupo</span></button>
       <button class="boton-hud" id="hud-avisos" title="Avisos">🔔<span>Avisos</span><em id="hud-avisos-n" hidden>0</em></button>
       <button class="boton-hud" id="hud-ayuda" title="Ayuda (H)">📖<span>Ayuda</span></button>

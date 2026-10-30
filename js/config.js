@@ -8,8 +8,10 @@
    Estos dos datos son públicos por diseño: se pueden subir a GitHub sin
    problema. NUNCA pegues aquí la "secret key" ni la "service_role key".
    ========================================================================= */
-/* Territorios Conectados — Conexión con Supabase */
 window.CONFIG = {
+  // Ejemplo: 'https://abcdefghijklmnop.supabase.co'
   SUPABASE_URL: 'https://xqkylqoiulncfqlbaxpb.supabase.co',
+
+  // Ejemplo: 'sb_publishable_xxxxxxxx'  (o la llave larga "anon public")
   SUPABASE_KEY: 'sb_publishable_tDavPjvEv-FSrlJpwXC0pQ_T0iFu2Cv'
 };

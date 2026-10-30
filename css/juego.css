@@ -488,3 +488,58 @@ body.modo-tactil .gestos-tactil {
 .gestos-lista[hidden] { display: none; }
 .boton-gesto { width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; background: var(--papel); font: 24px/1 var(--f-emoji); cursor: pointer; touch-action: manipulation; }
 .boton-gesto.principal { width: 56px; height: 56px; box-shadow: var(--sombra-cartel); }
+
+/* ================= Juego de los textos con huecos ================= */
+.hud-bolsa { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 800 1rem var(--f-titulo); min-height: 1.4em; }
+.hud-bolsa small { font: 700 .8rem var(--f-texto); color: var(--tinta-suave); }
+.hud-contadores span.critico b { color: #c43c2b; }
+
+.texto-cabeza { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.texto-cabeza > div:first-child { flex: 1; min-width: 240px; }
+.pregunta-grupo { margin: 2px 0 0; font: 800 1.45rem/1.25 var(--f-titulo); color: var(--azul-sombra); }
+.texto-contadores { display: flex; gap: 10px; }
+.contador-grande { display: grid; justify-items: center; background: var(--papel-2); border: 3px solid var(--borde); border-radius: 18px; padding: 6px 14px; font: 800 1.1rem var(--f-titulo); }
+.contador-grande b { font-size: 1.5rem; line-height: 1.1; }
+.contador-grande small { font: 700 .75rem var(--f-texto); color: var(--tinta-suave); }
+.contador-grande.critico { border-color: var(--coral); background: var(--coral-suave); }
+.nota-texto { margin: 10px 0 4px; color: var(--tinta-suave); font-size: .95rem; }
+.texto-huecos { background: #fff; border: 3px solid var(--borde); border-radius: 20px; padding: 18px 20px; margin-top: 10px;
+  font: 600 1.15rem/2.5 var(--f-texto); }
+.hueco-caja { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; vertical-align: baseline; }
+.hueco-caja sup, .hueco-listo sup { font: 800 .7rem var(--f-titulo); color: var(--tinta-suave); margin-right: 1px; }
+input.hueco { font: 800 1.05rem var(--f-texto); color: var(--tinta); min-width: 4ch; max-width: 22ch; padding: 2px 8px; height: 2em;
+  border: 2px dashed var(--azul); border-radius: 10px; background: var(--azul-suave); text-align: center; }
+input.hueco:focus { outline: 3px solid var(--sol); border-style: solid; }
+input.hueco:disabled { background: #f3f1ec; border-color: #d8d2c6; }
+input.hueco.mal { animation: sacudir .4s; border-color: var(--coral); background: var(--coral-suave); }
+@keyframes sacudir { 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-3px); } }
+.boton.mini.probar { padding: 2px 10px; font-size: .85rem; line-height: 1.6; }
+/* El botón Probar aparece solo cuando el hueco tiene algo escrito */
+.hueco-caja input.hueco:placeholder-shown + .probar { display: none; }
+.hueco-listo { font-weight: 800; color: #1f7a4b; background: var(--hoja-suave); border-radius: 8px; padding: 1px 8px; }
+.idea-final { margin-top: 16px; background: #fff7dc; border: 3px solid var(--sol); border-radius: 20px; padding: 14px 18px; }
+.idea-final .idea { margin: 4px 0 0; font: 800 1.35rem/1.35 var(--f-titulo); }
+.sin-oportunidades { margin-top: 14px; background: var(--coral-suave); border: 3px solid var(--coral); border-radius: 18px; padding: 12px 16px; }
+
+.nivel-pistas { margin: 18px 0 8px; }
+.nivel-pistas.n1 { color: #1f7a4b; } .nivel-pistas.n2 { color: #9a6a00; } .nivel-pistas.n3 { color: #b2412f; }
+.lista-pistas { display: grid; gap: 8px; }
+.pista-tarjeta { display: grid; grid-template-columns: 2.2rem 1fr; gap: 10px; align-items: start; background: #fff; border: 3px solid var(--borde); border-radius: 16px; padding: 10px 14px; }
+.pista-tarjeta .num { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--azul-suave); font: 800 1rem var(--f-titulo); }
+.pista-tarjeta.resuelta { opacity: .65; border-color: var(--hoja); }
+.pista-tarjeta.resuelta .num { background: var(--hoja-suave); color: #1f7a4b; }
+.pista-tarjeta.bloqueada { opacity: .55; align-items: center; }
+.pista-pregunta { margin: 0 0 6px; font-weight: 800; }
+.pista-consulta { display: block; white-space: pre-wrap; word-break: break-word; padding: 8px 10px; font-size: .95rem; letter-spacing: .02em; }
+
+.elegir-productos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.ficha-producto { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border: 3px solid var(--borde); border-radius: 18px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
+.ficha-producto .ico { font: 34px/1.1 var(--f-emoji); }
+.ficha-producto small { color: var(--tinta-suave); }
+.ficha-producto.elegido { border-color: var(--azul); background: var(--azul-suave); box-shadow: 0 4px 0 var(--azul-sombra); }
+.ficha-producto:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 520px) {
+  .elegir-productos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .texto-huecos { padding: 12px; font-size: 1.02rem; line-height: 2.4; }
+  .pregunta-grupo { font-size: 1.2rem; }
+}

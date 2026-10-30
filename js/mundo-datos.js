@@ -15,22 +15,28 @@
   const EDIF_W = 140, EDIF_H = 104;   // tamaño de los edificios
 
   const LUGARES = {
-    casa:    { id: 'casa',    nombre: 'Casa Común', emoji: '🏠', techo: '#f29e8e' },
-    archivo: { id: 'archivo', nombre: 'Archivo',    emoji: '📚', techo: '#8fa7f0' },
-    mercado: { id: 'mercado', nombre: 'Mercado',    emoji: '🧺', techo: '#f2c46b' },
-    plaza:   { id: 'plaza',   nombre: 'Plaza',      emoji: '⛲', techo: '#9ad6a7' },
-    antena:  { id: 'antena',  nombre: 'Antena',     emoji: '📡', techo: '#c3a6e8' },
-    salon:   { id: 'salon',   nombre: 'Salón de Reunión', emoji: '🎪', techo: '#f5a3c7' }
+    archivo: { id: 'archivo', nombre: 'Archivo',  emoji: '📜', techo: '#8fa7f0' },
+    pistas:  { id: 'pistas',  nombre: 'Pistas',   emoji: '🔎', techo: '#f2c46b' },
+    consola: { id: 'consola', nombre: 'Consola',  emoji: '💻', techo: '#c3a6e8' },
+    campo:   { id: 'campo',   nombre: 'Campo',    emoji: '🌱', techo: '#9ad6a7' },
+    salon:   { id: 'salon',   nombre: 'Mercado Central', emoji: '🤝', techo: '#f5a3c7' }
   };
+
+  /** Nombre y emoji de un lugar (el campo cambia según el territorio). */
+  function nombreLugar(lugar, territorio, params) {
+    const L = LUGARES[lugar];
+    if (lugar === 'campo' && params && params.producto) return { nombre: params.producto.lugar, emoji: params.producto.lugar_icono };
+    return { nombre: L.nombre, emoji: L.emoji };
+  }
 
   // Posición de cada edificio respecto a la isla: distancia y ángulo
   // medido desde la dirección "hacia afuera" (el puente llega por detrás).
+  // El Archivo va en el centro de la isla.
   const DISPOSICION = [
-    { lugar: 'casa',    dist: 150, ang: 0 },
-    { lugar: 'archivo', dist: 200, ang: -72 },
-    { lugar: 'mercado', dist: 200, ang: 72 },
-    { lugar: 'antena',  dist: 215, ang: -138 },
-    { lugar: 'plaza',   dist: 215, ang: 138 }
+    { lugar: 'archivo', dist: 60,  ang: 0 },
+    { lugar: 'pistas',  dist: 210, ang: -105 },
+    { lugar: 'consola', dist: 210, ang: 105 },
+    { lugar: 'campo',   dist: 235, ang: 0 }
   ];
 
   const rad = g => g * Math.PI / 180;
@@ -119,7 +125,7 @@
   }
 
   window.MundoDatos = {
-    ANCHO, ALTO, CX, CY, ISLA_R, PLAZA_R, PUENTE_MEDIO, EDIF_W, EDIF_H, LUGARES,
+    ANCHO, ALTO, CX, CY, ISLA_R, PLAZA_R, PUENTE_MEDIO, EDIF_W, EDIF_H, LUGARES, nombreLugar,
     centroIsla, edificiosIsla, edificioSalon, puente, construir, semilla, distSegmento
   };
 })();

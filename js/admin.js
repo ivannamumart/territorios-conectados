@@ -9,7 +9,9 @@
   const $ = id => document.getElementById(id);
   const CLAVE = 'tc_equipo';
   const M = window.MundoDatos;
-  const RECURSOS = { energia: '⚡', comida: '🍎', datos: '📶', monedas: '🪙' };
+  const RECURSOS = { energia: '⚡', flores: '🌸', sal: '🧂', maiz: '🌽', cafe: '☕', cocos: '🥥', pescado: '🐟' };
+  const NOMBRES_REC = { energia: 'Energía', flores: 'Flores', sal: 'Sal', maiz: 'Maíz', cafe: 'Café', cocos: 'Cocos', pescado: 'Pescado', oportunidades: 'Oportunidades (para el grupo)' };
+  const bolsaTexto = b => Object.keys(RECURSOS).filter(k => k !== 'energia' && Number((b || {})[k]) > 0).map(k => RECURSOS[k] + b[k]).join(' ') || '—';
   let sesion = null;       // { token, rol, nombre }
   let datos = null;        // último panel_estado
   let reloj = null;
@@ -72,7 +74,7 @@
   function abrirPanel() {
     $('p-login').hidden = true;
     $('p-panel').hidden = false;
-    const nombres = { admin: 'Profesora · control total', monitor: 'Monitor · puede regalar recursos y revivir', observador: 'Observadora · solo mira' };
+    const nombres = { admin: 'Profesora · control total', monitor: 'Monitor · puede ver respuestas y regalar', observador: 'Observadora · solo mira' };
     $('rol').textContent = (sesion.usuario || '') + ' · ' + nombres[sesion.rol];
     document.body.dataset.rol = sesion.rol;
     document.querySelectorAll('.solo-admin').forEach(b => { b.hidden = !puede('admin'); });
@@ -122,10 +124,11 @@
     const lim = Date.parse(datos.ahora) - 3 * 60 * 1000;
     const enLinea = js.filter(j => j.visto_en && Date.parse(j.visto_en) > lim).length;
     const caja = $('resumen'); caja.innerHTML = '';
-    [['👥', datos.grupos.length, 'grupos'], ['🟢', enLinea, 'en línea'], ['🙂', js.filter(j => j.estado === 'vivo').length, 'vivos'],
-     ['🆘', js.filter(j => j.estado === 'rescate').length, 'en rescate'], ['👻', js.filter(j => j.estado === 'fantasma').length, 'fantasmas'],
+    [['👥', datos.grupos.length, 'grupos'], ['🟢', enLinea, 'en línea'],
+     ['📜', datos.grupos.reduce((a, g) => a + g.resueltos.length, 0), 'huecos llenos'], ['🏆', datos.grupos.filter(g => g.completo_en).length, 'textos completos'],
+     ['❌', datos.grupos.reduce((a, g) => a + Number(g.fallos), 0), 'palabras falladas'],
      ['🔎', js.reduce((a, j) => a + j.consultas, 0), 'consultas'], ['🚩', datos.marcadas.length, 'marcadas'],
-     ['🤝', datos.ofertas.filter(o => o.estado === 'aceptada').length, 'tratos']].forEach(([i, n, t]) => {
+     ['🤝', datos.ofertas.filter(o => o.estado === 'aceptada').length, 'tratos'], ['🎟️', js.reduce((a, j) => a + (j.oport_armadas || 0), 0), 'armadas']].forEach(([i, n, t]) => {
       caja.appendChild(el('div', { class: 'dato' }, el('span', { class: 'ico', text: i }), el('b', { text: n }), el('span', { text: t })));
     });
   }
@@ -163,7 +166,7 @@
       const clave = e.lugar === 'salon' ? 'salon' : (g ? g.id + ':' + e.lugar : '');
       ctx.fillStyle = '#fffaf0'; ctx.fillRect(X(e.rect.x1), Y(e.rect.y1), (e.rect.x2 - e.rect.x1) * k, (e.rect.y2 - e.rect.y1) * k);
       ctx.font = Math.max(10, 34 * k) + 'px sans-serif';
-      ctx.fillText(M.LUGARES[e.lugar].emoji, X(e.x), Y(e.y - 10));
+      ctx.fillText(M.nombreLugar(e.lugar, g && g.territorio, null).emoji, X(e.x), Y(e.y - 10));
       if (dentro[clave]) {
         ctx.fillStyle = '#5b78f0'; ctx.beginPath(); ctx.arc(X(e.x + 60), Y(e.y - 60), 11, 0, 7); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.font = '800 12px Nunito, sans-serif'; ctx.fillText(dentro[clave], X(e.x + 60), Y(e.y - 60));
@@ -176,8 +179,7 @@
       const viejo = !j.visto_en || Date.parse(j.visto_en) < lim;
       ctx.globalAlpha = viejo ? 0.35 : 1;
       ctx.font = '18px sans-serif';
-      ctx.fillText(j.estado === 'fantasma' ? '👻' : j.avatar, X(j.x), Y(j.y) - 6);
-      if (j.estado === 'rescate') { ctx.strokeStyle = '#ff6b57'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X(j.x), Y(j.y) - 6, 13, 0, 7); ctx.stroke(); }
+      ctx.fillText(j.avatar, X(j.x), Y(j.y) - 6);
       ctx.globalAlpha = 1;
     });
   }
@@ -189,8 +191,8 @@
       caja.appendChild(el('div', { class: 'fila-ranking' },
         el('span', { class: 'pos', text: ['🥇', '🥈', '🥉'][i] || String(i + 1) }),
         el('span', { class: 'emoji', text: g.emoji }),
-        el('span', { class: 'nom' }, el('b', { text: g.nombre }), el('small', { text: t.emoji + ' ' + t.nombre + ' · ' + g.vivos + ' vivos · ' + g.muertos + ' 👻 · ' + g.misiones + ' misiones' })),
-        el('span', { class: 'puntos-ranking', text: Math.round(g.puntaje) })));
+        el('span', { class: 'nom' }, el('b', { text: g.nombre }), el('small', { text: t.emoji + ' ' + t.nombre + ' · tema ' + g.tema + ' · 🎟️ ' + g.oportunidades + ' · ❌ ' + g.fallos + (g.completo_en ? ' · 🏆 completo ' + hora(g.completo_en) : '') })),
+        el('span', { class: 'puntos-ranking', text: g.resueltos + '/18' })));
     });
     if (!datos.ranking.length) caja.appendChild(el('p', { class: 'subtitulo', text: 'Aún no hay grupos.' }));
   }
@@ -198,36 +200,35 @@
   function nombreGrupo(id) { const g = datos.grupos.find(x => x.id === id); return g ? g.emoji + ' ' + g.nombre : ''; }
 
   function pintarListas() {
-    const seg = segJuego();
-    const resc = $('lista-rescate'); resc.innerHTML = '';
-    datos.jugadores.filter(j => j.estado === 'rescate').forEach(j => {
-      resc.appendChild(el('div', { class: 'persona-fila' },
-        el('span', { class: 'cara', text: j.avatar }),
-        el('span', {}, el('b', { text: j.nombre }), el('small', { text: nombreGrupo(j.grupo_id) + ' · ' + (j.causa || '') + ' · quedan ' + fmt(Number(j.rescate_hasta_seg) - seg) })),
-        puede('admin', 'monitor') ? el('button', { class: 'boton mini sol', onclick: () => regalarRapido(j) }, 'Regalar 20') : null));
+    const av = $('lista-avance'); av.innerHTML = '';
+    datos.grupos.forEach(g => {
+      const hechos = new Set(g.resueltos);
+      const cuadros = el('span', { class: 'cuadros-avance' }, ...Array.from({ length: 18 }, (_, k) => el('i', { class: hechos.has(k + 1) ? 'on' : '', title: 'Hueco ' + (k + 1) })));
+      av.appendChild(el('div', { class: 'persona-fila' },
+        el('span', { class: 'cara', text: g.emoji }),
+        el('span', {}, el('b', { text: g.nombre + ' · ' + hechos.size + '/18' }), el('small', { text: 'Tema ' + g.tema + ': ' + (g.titulo || '') + ' · 🎟️ ' + g.oportunidades + ' · ❌ ' + g.fallos }), cuadros)));
     });
-    if (!resc.children.length) resc.appendChild(el('p', { class: 'subtitulo', text: 'Nadie está en rescate.' }));
-    const muertos = $('lista-muertos'); muertos.innerHTML = '';
-    datos.muertes.forEach(m => {
-      const j = datos.jugadores.find(x => x.nombre === m.nombre && nombreGrupo(x.grupo_id).indexOf(m.grupo) >= 0);
-      muertos.appendChild(el('div', { class: 'persona-fila' },
-        el('span', { class: 'cara', text: '👻' }),
-        el('span', {}, el('b', { text: m.avatar + ' ' + m.nombre + ' · ' + m.grupo }),
-          el('small', { text: hora(m.momento) + ' · ' + m.causa + ' · pudieron ayudar: ' + ((m.pudieron_ayudar || []).join(', ') || 'nadie en línea') })),
-        j && j.estado === 'fantasma' && puede('admin', 'monitor') ? el('button', { class: 'boton mini', onclick: () => revivir(j) }, 'Revivir') : null));
+    if (!av.children.length) av.appendChild(el('p', { class: 'subtitulo', text: 'Aún no hay grupos.' }));
+    const it = $('lista-intentos'); it.innerHTML = '';
+    (datos.intentos || []).slice(0, 25).forEach(i => {
+      it.appendChild(el('div', { class: 'persona-fila' },
+        el('span', { class: 'cara', text: i.correcta ? '✅' : '❌' }),
+        el('span', {}, el('b', { text: i.avatar + ' ' + i.nombre + ' · ' + i.emoji + ' ' + i.grupo }), el('small', { text: hora(i.momento) + ' · hueco ' + i.n + ': «' + (i.respuesta || '') + '»' }))));
     });
-    if (!muertos.children.length) muertos.appendChild(el('p', { class: 'subtitulo', text: 'Nadie ha muerto.' }));
+    if (!it.children.length) it.appendChild(el('p', { class: 'subtitulo', text: 'Nadie ha probado palabras todavía.' }));
     const bit = $('bitacora'); bit.innerHTML = '';
     const textos = {
       ingreso_nuevo: 'entró por primera vez', regreso: 'volvió a entrar', grupo_creado: 'Se creó un grupo', compra: 'compró en el mercado',
       venta: 'vendió en el mercado', compra_megas: 'recargó megas', trabajo: 'trabajó', ayuda: 'envió recursos', oferta: 'publicó una oferta',
       intercambio: 'hizo un intercambio', respuesta: 'respondió una misión', rescate_inicia: 'quedó en rescate', rescatado: 'fue rescatado',
       muerte: 'se convirtió en fantasma', reloj: 'Reloj', config: 'Ajustes cambiados', regalo_docente: 'Regalo del equipo docente',
-      revivido: 'fue revivido', cambio_territorio: 'Cambio de territorio', reinicio: 'Mundo reiniciado', fondo_depositar: 'guardó en el fondo común', fondo_retirar: 'sacó del fondo común'
+      revivido: 'fue revivido', cambio_territorio: 'Cambio de territorio', reinicio: 'Mundo reiniciado', recolecta: 'recolectó', oportunidad: 'armó una oportunidad 🎟️',
+      hueco: 'probó el hueco', texto_completo: '🏆 completó el texto del grupo'
     };
     datos.bitacora.forEach(b => {
       let t = (b.nombre ? b.avatar + ' ' + b.nombre + ' ' : '') + (textos[b.tipo] || b.tipo);
       if (b.tipo === 'respuesta') t += b.detalle.correcta ? ' ✅' : ' ❌';
+      if (b.tipo === 'hueco') t += ' ' + b.detalle.n + (b.detalle.correcta ? ' ✅' : ' ❌');
       if (b.tipo === 'reloj') t += ': ' + b.detalle.accion;
       if (b.tipo === 'grupo_creado') t += ': ' + b.detalle.nombre;
       bit.appendChild(el('li', {}, el('small', { text: hora(b.momento) }), ' ', t));
@@ -238,8 +239,8 @@
   function cargarConfig() {
     const c = datos.config;
     const pon = (id, v) => { $(id).value = v; };
-    pon('d-desgaste', c.mult_desgaste); pon('d-precios', c.mult_precios); pon('d-megas', c.mult_megas);
-    pon('d-misiones', c.dificultad); pon('d-rescate', c.rescate_minutos); pon('d-grupos', c.max_grupos);
+    pon('d-desgaste', c.mult_desgaste); pon('d-megas', c.mult_megas);
+    pon('d-oport', c.oport_inicio); pon('d-grupos', c.max_grupos);
     pon('d-porgrupo', c.max_por_grupo); pon('d-mov', c.mov_mapa); pon('d-anuncio', c.anuncio || '');
     $('d-inscripcion').checked = !!c.inscripcion_abierta;
     if (c.casa_hasta) {
@@ -247,15 +248,15 @@
       $('casa-hasta').value = d.toISOString().slice(0, 16);
     }
     document.querySelectorAll('input[name="fuera"]').forEach(r => { r.checked = r.value === c.fuera_de_clase; });
-    ['desgaste', 'precios', 'megas'].forEach(n => { $('v-' + n).textContent = '×' + Number($('d-' + n).value).toFixed(1); });
+    ['desgaste', 'megas'].forEach(n => { $('v-' + n).textContent = '×' + Number($('d-' + n).value).toFixed(1); });
     configCargada = true;
   }
 
   async function guardarConfig() {
     try {
       await rpc('panel_config', { p_cambios: {
-        mult_desgaste: Number($('d-desgaste').value), mult_precios: Number($('d-precios').value), mult_megas: Number($('d-megas').value),
-        dificultad: $('d-misiones').value, rescate_minutos: parseInt($('d-rescate').value, 10),
+        mult_desgaste: Number($('d-desgaste').value), mult_megas: Number($('d-megas').value),
+        oport_inicio: parseInt($('d-oport').value, 10),
         max_grupos: parseInt($('d-grupos').value, 10), max_por_grupo: parseInt($('d-porgrupo').value, 10),
         inscripcion_abierta: $('d-inscripcion').checked, mov_mapa: $('d-mov').value, anuncio: $('d-anuncio').value
       } });
@@ -298,44 +299,43 @@
       });
       const miembros = datos.jugadores.filter(j => j.grupo_id === g.id);
       const tabla = el('table', { class: 'tabla-panel' },
-        el('tr', {}, ...['Estudiante', 'Estado', '⚡', '🍎', '📶', '🪙', 'Misiones', 'Consultas', '🚩', 'Ayudas', ''].map(h => el('th', { text: h }))));
+        el('tr', {}, ...['Estudiante', '⚡', 'Productos', 'Huecos', 'Fallos', 'Consultas', '🚩', 'Tratos', '🎟️ armadas', ''].map(h => el('th', { text: h }))));
       miembros.forEach(j => {
-        const estado = j.estado === 'vivo' ? '🙂 Vivo' : j.estado === 'rescate' ? '🆘 ' + fmt(Number(j.rescate_hasta_seg) - seg) : '👻 ' + hora(j.murio_en);
-        tabla.appendChild(el('tr', { class: j.estado },
-          el('td', {}, j.avatar + ' ' + j.nombre), el('td', { text: estado }),
-          el('td', { text: Math.round(j.energia) }), el('td', { text: Math.round(j.comida) }), el('td', { text: j.datos }), el('td', { text: j.monedas }),
-          el('td', { text: j.misiones_ok }), el('td', { text: j.consultas }), el('td', { text: j.marcadas || '' }), el('td', { text: j.ayudas_dadas }),
+        tabla.appendChild(el('tr', {},
+          el('td', {}, j.avatar + ' ' + j.nombre),
+          el('td', { text: Math.round(j.energia) }), el('td', { text: bolsaTexto(j.bolsa) }),
+          el('td', { text: j.huecos_ok }), el('td', { text: j.fallos }), el('td', { text: j.consultas }), el('td', { text: j.marcadas || '' }),
+          el('td', { text: j.intercambios }), el('td', { text: j.oport_armadas }),
           el('td', { class: 'acciones' },
             puede('admin', 'monitor') ? el('button', { class: 'boton mini suave', onclick: () => abrirRegalo(j.nombre, j.id, null) }, '🎁') : null,
-            j.estado === 'fantasma' && puede('admin', 'monitor') ? el('button', { class: 'boton mini', onclick: () => revivir(j) }, 'Revivir') : null,
             el('button', { class: 'boton mini suave', onclick: () => { cambiarPestana('consultas'); $('ver-estudiante').value = j.id; verHistorial(); } }, '🔎'))));
       });
-      const f = g.fondo || {};
-      const tieneFondo = (window.TERRITORIOS[g.territorio] && g.territorio === 'pueblo_rio');
       caja.appendChild(el('div', { class: 'caja grupo-caja', style: 'border-top: 10px solid ' + t.color },
         el('div', { class: 'grupo-cabeza' },
           el('span', { class: 'emoji', text: g.emoji }),
           el('div', {}, el('h2', { text: g.nombre }), el('small', { text: 'Código: ' }, el('b', { text: g.codigo || '—' }), ' · creado ' + fecha(g.creado_en))),
           el('div', { class: 'campo' }, el('label', { text: 'Territorio' }), selector),
-          puede('admin', 'monitor') ? el('button', { class: 'boton sol', onclick: () => abrirRegalo(g.nombre + ' (todo el grupo)', null, g.id) }, '🎁 Regalar al grupo') : null),
-        tieneFondo ? el('p', { class: 'subtitulo', text: '🏺 Fondo común: ⚡' + (f.energia || 0) + ' 🍎' + (f.comida || 0) + ' 📶' + (f.datos || 0) + ' 🪙' + (f.monedas || 0) }) : null,
+          puede('admin', 'monitor') ? el('button', { class: 'boton sol', onclick: () => abrirRegalo(g.nombre + ' (todo el grupo)', null, g.id) }, '🎁 Regalar al grupo') : null,
+          puede('admin', 'monitor') ? el('button', { class: 'boton suave', onclick: () => verRespuestas(g) }, '🔑 Ver texto y respuestas') : null),
+        el('p', { class: 'subtitulo' }, el('b', { text: 'Tema ' + g.tema + ': ' + (g.titulo || '') }), ' · 📜 ' + g.resueltos.length + '/18 huecos · 🎟️ ' + g.oportunidades + ' oportunidades · ❌ ' + g.fallos + ' palabras falladas' + (g.completo_en ? ' · 🏆 completó el texto a las ' + hora(g.completo_en) : '')),
         el('div', { class: 'tabla-scroll' }, tabla)));
     });
   }
 
   function abrirRegalo(nombre, jugador, grupo) {
     const capa = el('div', { class: 'capa-modal' });
-    const campos = Object.keys(RECURSOS).map(r => el('div', { class: 'campo' }, el('label', { for: 'reg-' + r, text: RECURSOS[r] + ' ' + { energia: 'Energía', comida: 'Comida', datos: 'Megas', monedas: 'Monedas' }[r] }), el('input', { id: 'reg-' + r, type: 'number', value: 0 })));
+    const claves = Object.keys(RECURSOS).concat(['oportunidades']);
+    const campos = claves.map(r => el('div', { class: 'campo' }, el('label', { for: 'reg-' + r, text: (RECURSOS[r] || '🎟️') + ' ' + NOMBRES_REC[r] }), el('input', { id: 'reg-' + r, type: 'number', value: 0 })));
     const cerrar = () => capa.remove();
     capa.appendChild(el('div', { class: 'cartel modal' },
       el('h2', { text: '🎁 Regalar a ' + nombre }),
-      el('p', { class: 'subtitulo', text: 'Usa números negativos para quitar. La energía y la comida llegan hasta 100.' }),
+      el('p', { class: 'subtitulo', text: 'Usa números negativos para quitar. La energía llega hasta 100. Las oportunidades son de todo el grupo (si regalas a una persona, van a su grupo).' }),
       el('div', { class: 'fila-controles' }, ...campos),
       el('div', { class: 'fila-botones' },
         el('button', { class: 'boton suave', onclick: cerrar }, 'Cancelar'),
         el('button', { class: 'boton', onclick: async () => {
           const rec = {};
-          Object.keys(RECURSOS).forEach(r => { const v = Number($('reg-' + r).value); if (v) rec[r] = v; });
+          claves.forEach(r => { const v = Number($('reg-' + r).value); if (v) rec[r] = v; });
           try { await rpc('panel_regalar', { p_jugador: jugador, p_grupo: grupo, p_recursos: rec }); aviso('Listo: recursos enviados.', 'ok'); cerrar(); refrescar(); }
           catch (e) { aviso(e.message, 'error'); }
         } }, 'Enviar'))));
@@ -344,14 +344,29 @@
     $('reg-energia').focus();
   }
 
-  async function regalarRapido(j) {
-    try { await rpc('panel_regalar', { p_jugador: j.id, p_grupo: null, p_recursos: { energia: 20, comida: 20 } }); aviso('Le enviaste 20 de energía y 20 de comida a ' + j.nombre + '.', 'ok'); refrescar(); }
-    catch (e) { aviso(e.message, 'error'); }
-  }
-
-  async function revivir(j) {
-    try { await rpc('panel_revivir', { p_jugador: j.id }); aviso(j.nombre + ' volvió al juego.', 'ok'); refrescar(); }
-    catch (e) { aviso(e.message, 'error'); }
+  async function verRespuestas(g) {
+    let d;
+    try { d = await rpc('panel_texto', { p_grupo: g.id }); } catch (e) { aviso(e.message, 'error'); return; }
+    const capa = el('div', { class: 'capa-modal' });
+    const cerrar = () => capa.remove();
+    const texto = el('p', { class: 'texto-respuestas' });
+    d.texto.split(/(\{\d+\})/).forEach(tr => {
+      const m = tr.match(/^\{(\d+)\}$/);
+      if (!m) { texto.appendChild(document.createTextNode(tr)); return; }
+      const h = d.huecos.find(x => x.n === Number(m[1]));
+      texto.appendChild(el('b', { class: h.resuelto ? 'ok' : 'falta', title: 'Hueco ' + h.n }, '[' + h.n + ' ' + h.respuesta.split('|')[0] + ']'));
+    });
+    const tabla = el('table', { class: 'tabla-panel' }, el('tr', {}, ...['#', 'Pista', 'Consulta', 'Respuesta (se aceptan)', ''].map(x => el('th', { text: x }))));
+    d.huecos.forEach(h => tabla.appendChild(el('tr', {}, el('td', { text: h.n }), el('td', { text: h.pregunta }), el('td', {}, el('code', { text: h.consulta })),
+      el('td', { text: h.respuesta.split('|').join(' · ') }), el('td', { text: h.resuelto ? '✅' : '' }))));
+    capa.appendChild(el('div', { class: 'cartel modal ancho' },
+      el('h2', { text: '🔑 ' + g.emoji + ' ' + g.nombre + ' · ' + d.titulo }),
+      el('p', {}, el('b', { text: d.pregunta })), texto,
+      el('p', { class: 'subtitulo', text: 'Idea final: ' + d.idea }),
+      el('div', { class: 'tabla-scroll' }, tabla),
+      el('div', { class: 'fila-botones' }, el('button', { class: 'boton', onclick: cerrar }, 'Cerrar'))));
+    capa.addEventListener('mousedown', e => { if (e.target === capa) cerrar(); });
+    document.body.appendChild(capa);
   }
 
   // ------------------------------------------------------------------ consultas
@@ -359,7 +374,7 @@
     const m = q.metricas || {};
     return el('div', { class: 'consulta-pasada' + (q.marcada ? ' marcada' : '') + (q.ok === false ? ' fallida' : '') },
       el('div', { class: 'cabeza' },
-        el('span', { text: hora(q.momento) + (conNombre ? ' · ' + q.avatar + ' ' + q.nombre + ' · ' + q.grupo : '') + (q.bytes != null ? ' · ' + (q.bytes / 1024).toFixed(1) + ' KB · ' + q.megas + ' megas' : '') }),
+        el('span', { text: hora(q.momento) + (conNombre ? ' · ' + q.avatar + ' ' + q.nombre + ' · ' + q.grupo : '') + (q.bytes != null ? ' · ' + (q.bytes / 1024).toFixed(1) + ' KB · ⚡' + q.megas : '') }),
         q.marcada || conNombre ? el('b', { class: 'motivo', text: '🚩 ' + (q.motivo || '') }) : null),
       el('pre', { class: 'json chico', text: q.texto || '' }),
       el('small', { class: 'metricas', text: 'Teclas: ' + (m.teclas ?? '—') + ' · letras tecleadas: ' + (m.insertados_teclado ?? '—') + ' · texto nuevo: ' + (m.crecimiento ?? '—') + ' · ritmo medio: ' + (m.media_ms ?? '—') + ' ms · intentos de pegar: ' + (m.intentos_pegar ?? 0) }),
@@ -390,7 +405,7 @@
       const filas = await rpc('panel_consultas', { p_jugador: id });
       if (!filas.length) { caja.appendChild(el('p', { class: 'subtitulo', text: 'Sin consultas todavía.' })); return; }
       const tot = filas.reduce((a, f) => a + (f.megas || 0), 0);
-      caja.appendChild(el('p', { class: 'subtitulo', text: filas.length + ' consultas · ' + tot + ' megas · ' + filas.filter(f => f.marcada).length + ' marcadas' }));
+      caja.appendChild(el('p', { class: 'subtitulo', text: filas.length + ' consultas · ⚡' + tot + ' de energía · ' + filas.filter(f => f.marcada).length + ' marcadas' }));
       filas.forEach(q => caja.appendChild(tarjetaConsulta(q, false)));
     } catch (e) { aviso(e.message, 'error'); }
   }
@@ -399,11 +414,11 @@
   function pintarOfertas() {
     const caja = $('ofertas'); caja.innerHTML = '';
     if (!datos.ofertas.length) { caja.appendChild(el('p', { class: 'subtitulo', text: 'Aún no hay ofertas.' })); return; }
-    const tabla = el('table', { class: 'tabla-panel' }, el('tr', {}, ...['Hora', 'Plaza', 'Quién', 'Ofrece', 'Pide', 'Mensaje', 'Estado'].map(h => el('th', { text: h }))));
+    const tabla = el('table', { class: 'tabla-panel' }, el('tr', {}, ...['Hora', 'Lugar', 'Quién', 'Ofrece', 'Pide', 'Mensaje', 'Estado'].map(h => el('th', { text: h }))));
     datos.ofertas.forEach(o => {
       tabla.appendChild(el('tr', { class: o.marcada ? 'marcada' : '' },
         el('td', { text: hora(o.creada_en) }), el('td', { text: o.lugar_nombre }), el('td', { text: o.autor_avatar + ' ' + o.autor_nombre }),
-        el('td', { text: o.da_cant + ' ' + RECURSOS[o.da_recurso] }), el('td', { text: o.pide_cant + ' ' + RECURSOS[o.pide_recurso] }),
+        el('td', { text: o.da_cant + ' ' + (RECURSOS[o.da_recurso] || o.da_recurso) }), el('td', { text: o.pide_cant + ' ' + (RECURSOS[o.pide_recurso] || o.pide_recurso) }),
         el('td', { text: (o.mensaje || '') + (o.marcada ? '  🚩 ' + o.motivo : '') }),
         el('td', { text: o.estado === 'aceptada' ? '🤝 con ' + o.acepto_nombre : o.estado === 'cancelada' ? 'Cancelada' : 'Abierta' })));
     });
@@ -412,12 +427,12 @@
 
   // ------------------------------------------------------------------ reporte CSV
   const COLUMNAS = [
-    ['estudiante', 'Estudiante'], ['grupo', 'Grupo'], ['territorio', 'Territorio'], ['estado', 'Estado'], ['energia', 'Energía'],
-    ['comida', 'Comida'], ['megas', 'Megas'], ['monedas', 'Monedas'], ['puntaje', 'Puntaje'], ['misiones_resueltas', 'Misiones resueltas'],
-    ['megas_gastados', 'Megas gastados'], ['consultas_hechas', 'Consultas hechas'], ['consultas_marcadas', 'Consultas marcadas'],
-    ['intercambios_hechos', 'Intercambios hechos'], ['ayudas_dadas', 'Ayudas dadas'], ['rescates', 'Rescates'], ['murio', 'Murió'],
-    ['hora_muerte', 'Hora de la muerte'], ['causa_muerte', 'Causa de la muerte'], ['pudieron_ayudar', 'Quiénes pudieron ayudar'],
-    ['primer_ingreso', 'Primer ingreso'], ['ultima_conexion', 'Última conexión']
+    ['estudiante', 'Estudiante'], ['grupo', 'Grupo'], ['territorio', 'Territorio'], ['tema', 'Tema'], ['texto', 'Texto'],
+    ['huecos_del_grupo', 'Huecos llenos del grupo'], ['oportunidades_del_grupo', 'Oportunidades del grupo'],
+    ['huecos_que_completo', 'Huecos que llenó'], ['intentos_fallidos', 'Palabras falladas'],
+    ['consultas_hechas', 'Consultas hechas'], ['energia_en_consultas', 'Energía gastada en consultas'], ['consultas_marcadas', 'Consultas marcadas'],
+    ['energia', 'Energía final'], ['productos', 'Productos'], ['intercambios_hechos', 'Intercambios hechos'], ['ayudas_dadas', 'Envíos a otros'],
+    ['oportunidades_armadas', 'Oportunidades armadas'], ['primer_ingreso', 'Primer ingreso'], ['ultima_conexion', 'Última conexión']
   ];
 
   async function descargarCSV() {
@@ -462,7 +477,7 @@
     $('terminar-1').addEventListener('click', () => { $('terminar-2').hidden = false; });
     $('terminar-no').addEventListener('click', () => { $('terminar-2').hidden = true; });
     $('guardar-config').addEventListener('click', guardarConfig);
-    ['desgaste', 'precios', 'megas'].forEach(n => $('d-' + n).addEventListener('input', () => { $('v-' + n).textContent = '×' + Number($('d-' + n).value).toFixed(1); }));
+    ['desgaste', 'megas'].forEach(n => $('d-' + n).addEventListener('input', () => { $('v-' + n).textContent = '×' + Number($('d-' + n).value).toFixed(1); }));
     $('ver-estudiante').addEventListener('change', verHistorial);
     $('descargar-csv').addEventListener('click', descargarCSV);
     $('salir').addEventListener('click', salir);

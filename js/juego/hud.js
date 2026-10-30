@@ -6,14 +6,15 @@
 
   const $ = id => document.getElementById(id);
   const M = window.MundoDatos;
-  const NOMBRE_LUGAR = { casa: '🏠 Casa Común', archivo: '📚 Archivo', mercado: '🧺 Mercado', plaza: '⛲ Plaza', antena: '📡 Antena' };
+  const PRODUCTOS = { flores: '🌸', sal: '🧂', maiz: '🌽', cafe: '☕', cocos: '🥥', pescado: '🐟' };
   let relojAviso = null;
+  let ultimaBolsa = null;
   let ultimoMini = 0;
   const historial = [];
 
   function iniciar() {
     $('hud').hidden = false;
-    $('hud-misiones').addEventListener('click', () => Paneles.abrir('misiones', {}));
+    $('hud-misiones').addEventListener('click', () => Paneles.abrir('texto', {}));
     $('hud-grupo').addEventListener('click', () => Paneles.abrir('grupo', {}));
     $('hud-ayuda').addEventListener('click', () => Paneles.abrir('ayuda', {}));
     $('hud-avisos').addEventListener('click', () => Paneles.abrir('avisos', {}));
@@ -60,9 +61,23 @@
     const e = Juego.estado, j = e.jugador, r = e.reloj;
     const rec = Juego.recursos();
     barra('hud-energia', rec.energia);
-    barra('hud-comida', rec.comida);
-    $('hud-datos').textContent = rec.datos;
-    $('hud-monedas').textContent = rec.monedas;
+    $('hud-oport').textContent = e.grupo.oportunidades != null ? e.grupo.oportunidades : '–';
+    $('hud-oport').parentNode.classList.toggle('critico', Number(e.grupo.oportunidades) === 0);
+    $('hud-huecos').textContent = e.grupo.resueltos != null ? e.grupo.resueltos : 0;
+    const bolsa = j.bolsa || {};
+    const claveBolsa = JSON.stringify(bolsa);
+    if (claveBolsa !== ultimaBolsa) {
+      ultimaBolsa = claveBolsa;
+      const caja = $('hud-bolsa');
+      caja.innerHTML = '';
+      const hay = Object.keys(PRODUCTOS).filter(k => Number(bolsa[k]) > 0);
+      if (!hay.length) caja.appendChild(Object.assign(document.createElement('small'), { textContent: 'Sin productos todavía' }));
+      hay.forEach(k => {
+        const s = document.createElement('span');
+        s.textContent = PRODUCTOS[k] + ' ' + bolsa[k];
+        caja.appendChild(s);
+      });
+    }
     $('hud-reloj').textContent = textoReloj(r);
     $('hud-reloj').className = 'reloj ' + r.estado;
 
@@ -76,13 +91,11 @@
     let texto = '', clase = '';
     $('hud-resultados').hidden = r.estado !== 'terminado';
     if (r.estado === 'terminado') { texto = '🏁 El juego terminó. ¡Gracias por jugar!'; clase = 'fin'; }
-    else if (j.estado === 'fantasma') { texto = '👻 Eres un fantasma: puedes recorrer el mundo, pero ya no puedes actuar.'; clase = 'fantasma'; }
-    else if (j.estado === 'rescate') {
-      const falta = (Number(j.rescate_hasta_seg) - Juego.segJuego());
-      texto = '🆘 Te quedaste ' + (j.causa || 'sin recursos') + '. Tu grupo tiene ' + fmt(falta * 1) + ' de juego para enviarte recursos. Presiona 4 para pedir ayuda.';
+    else if (Number(e.grupo.oportunidades) === 0 && !e.grupo.completo_en && r.estado === 'corriendo') {
+      texto = '🎟️ Tu grupo se quedó sin oportunidades. Recolecten, intercambien en la Plaza Central y armen una oportunidad en el Archivo.';
       clase = 'rescate';
     } else if (r.estado === 'espera') { texto = '⏳ El juego aún no empieza. Explora el mapa mientras la profe da la señal.'; clase = 'pausa'; }
-    else if (r.estado === 'pausado') { texto = '⏸ El juego está en pausa. Tus recursos no bajan mientras tanto.'; clase = 'pausa'; }
+    else if (r.estado === 'pausado') { texto = '⏸ El juego está en pausa.'; clase = 'pausa'; }
     caja.hidden = !texto;
     caja.className = 'hud-estado ' + clase;
     $('hud-estado-texto').textContent = texto;
@@ -93,13 +106,14 @@
 
   function lugar(escenaId) {
     let t = '🗺️ Mapa del mundo', senal = null;
-    if (escenaId === 'salon') t = '🎪 Salón de Reunión';
+    if (escenaId === 'salon') t = '🤝 Mercado Central';
     else if (escenaId && escenaId !== 'mundo') {
       const [gid, l] = escenaId.split(':');
       const g = Juego.grupoPorId(gid);
       const terr = g && window.TERRITORIOS[g.territorio];
-      t = (NOMBRE_LUGAR[l] || l) + (g ? ' · ' + g.emoji + ' ' + g.nombre : '');
-      if (terr && (l === 'archivo' || l === 'antena')) senal = terr.rasgos[0].nivel;
+      const NL = M.nombreLugar(l, g && g.territorio, g && Juego.parametrosTerritorio(g.territorio));
+      t = NL.emoji + ' ' + NL.nombre + (g ? ' · ' + g.emoji + ' ' + g.nombre : '');
+      if (terr && l === 'consola') senal = terr.rasgos[0].nivel;
     }
     $('hud-lugar').textContent = t;
     const s = $('hud-senal');
@@ -135,7 +149,7 @@
   function actualizarAlertas() {
     const caja = $('hud-alertas');
     const yo = Juego.yoId();
-    const lista = [...Juego.miembros.values()].filter(m => m.estado === 'rescate' && m.id !== yo);
+    const lista = [];
     const clave = lista.map(m => m.id + ':' + m.rescate_hasta_seg).join('|');
     if (clave === claveAlertas) { actualizarAlertasTiempo(); return; }   // nada cambió: no redibujar
     claveAlertas = clave;

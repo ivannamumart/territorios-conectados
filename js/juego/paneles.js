@@ -9,10 +9,19 @@
   const $ = id => document.getElementById(id);
   const RECURSOS = {
     energia: { icono: '⚡', nombre: 'Energía' },
-    comida:  { icono: '🍎', nombre: 'Comida' },
-    datos:   { icono: '📶', nombre: 'Megas' },
-    monedas: { icono: '🪙', nombre: 'Monedas' }
+    flores:  { icono: '🌸', nombre: 'Flores' },
+    sal:     { icono: '🧂', nombre: 'Sal' },
+    maiz:    { icono: '🌽', nombre: 'Maíz' },
+    cafe:    { icono: '☕', nombre: 'Café' },
+    cocos:   { icono: '🥥', nombre: 'Cocos' },
+    pescado: { icono: '🐟', nombre: 'Pescado' }
   };
+  const PRODUCTOS = ['flores', 'sal', 'maiz', 'cafe', 'cocos', 'pescado'];
+  /** Texto corto con la energía y los productos de alguien. */
+  function textoBolsa(energia, bolsa) {
+    const b = bolsa || {};
+    return '⚡' + Math.round(energia) + ' ' + PRODUCTOS.filter(k => Number(b[k]) > 0).map(k => RECURSOS[k].icono + b[k]).join(' ');
+  }
 
   /** Crea elementos sin usar innerHTML con datos de otras personas. */
   function el(tag, props, ...hijos) {
@@ -59,10 +68,13 @@
     HUD.prompt(null);
     try { def.render(cuerpo, actual.ctx, actual); }
     catch (e) { cuerpo.appendChild(el('p', { class: 'error-campo', text: 'No se pudo abrir: ' + e.message })); }
-    setTimeout(() => {
-      const f = cuerpo.querySelector('textarea, input:not([type=hidden]):not([type=range]), select, button');
-      if (f) f.focus();
-    }, 50);
+    // En celulares no se enfoca nada solo (el teclado tapaba la pantalla)
+    if (!document.body.classList.contains('modo-tactil')) {
+      setTimeout(() => {
+        const f = cuerpo.querySelector('textarea, input:not([type=hidden]):not([type=range]), select, button');
+        if (f) f.focus();
+      }, 50);
+    }
   }
 
   function cerrar() {
@@ -158,25 +170,16 @@
           const rec = yo ? Juego.recursos() : m;
           lista.appendChild(el('div', { class: 'integrante' + (yo ? ' yo' : '') + (enLinea.has(m.id) ? ' en-linea' : '') + ' ' + m.estado },
             el('span', { class: 'punto', title: enLinea.has(m.id) ? 'En línea' : 'Desconectado' }),
-            el('span', { class: 'cara', text: m.estado === 'fantasma' ? '👻' : m.avatar }),
+            el('span', { class: 'cara', text: m.avatar }),
             el('span', { class: 'nom', text: m.nombre + (yo ? ' (tú)' : '') }),
-            el('span', { class: 'mini-recursos', text: '⚡' + Math.round(rec.energia) + ' 🍎' + Math.round(rec.comida) + ' 📶' + rec.datos + ' 🪙' + rec.monedas }),
-            m.estado === 'rescate' ? el('span', { class: 'etiqueta rescate', text: '🆘 En rescate' }) : null,
-            m.estado === 'fantasma' ? el('span', { class: 'etiqueta fantasma', text: 'Fantasma' }) : null,
-            !yo && m.estado !== 'fantasma' ? el('button', { class: 'boton mini sol', onclick: () => abrir('ayudar', { para: m.id }) }, 'Enviar') : null));
+            el('span', { class: 'mini-recursos', text: textoBolsa(rec.energia, rec.bolsa) + ' · 📜' + (m.huecos_ok || 0) }),
+            !yo ? el('button', { class: 'boton mini sol', onclick: () => abrir('ayudar', { para: m.id }) }, 'Enviar') : null));
         });
         const cols = el('div', { class: 'columnas' },
           el('div', { class: 'bloque' }, el('h3', { text: 'Integrantes' }), lista),
           tarjetaTerritorio(g.territorio));
         cuerpo.appendChild(cols);
 
-        const params = Juego.parametrosTerritorio(g.territorio);
-        if (params.fondo_comun) {
-          const f = g.fondo || {};
-          cuerpo.appendChild(el('div', { class: 'bloque' }, el('h3', { text: '🏺 Fondo común de la cooperativa' }),
-            el('p', { text: '⚡ ' + (f.energia || 0) + '  ·  🍎 ' + (f.comida || 0) + '  ·  📶 ' + (f.datos || 0) + '  ·  🪙 ' + (f.monedas || 0) }),
-            el('p', { class: 'subtitulo', text: 'Se usa en la Casa Común de tu isla.' })));
-        }
 
         const mundo = el('div', { class: 'mundo' });
         Juego.grupos.slice().sort((a, b) => (a.isla || 0) - (b.isla || 0)).forEach(o => {
@@ -193,7 +196,7 @@
             el('button', { class: 'boton coral', onclick: () => Juego.salir() }, 'Sí, salir')));
         cuerpo.appendChild(el('div', { class: 'fila-botones' },
           el('button', { class: 'enlace', onclick: () => { confirmar.hidden = false; } }, 'Salir de este computador'),
-          el('span', { class: 'subtitulo', text: 'Atajos: M misiones · G grupo · H ayuda · 1–6 gestos' })));
+          el('span', { class: 'subtitulo', text: 'Atajos: M texto · G grupo · H ayuda · 1–6 gestos' })));
         cuerpo.appendChild(confirmar);
       };
       panel.pintar();
@@ -208,26 +211,27 @@
       const yo = Juego.yoId();
       const params = Juego.parametrosTerritorio(Juego.estado.grupo.territorio);
       const candidatos = new Map();
-      Juego.miembros.forEach(m => { if (m.id !== yo && m.estado !== 'fantasma') candidatos.set(m.id, { ...m, grupo: true }); });
-      Red.presentes().forEach(p => { if (p.id !== yo && !candidatos.has(p.id) && p.estado !== 'fantasma') candidatos.set(p.id, { ...p, grupo: false }); });
+      Juego.miembros.forEach(m => { if (m.id !== yo) candidatos.set(m.id, { ...m, grupo: true }); });
+      Red.presentes().forEach(p => { if (p.id !== yo && !candidatos.has(p.id)) candidatos.set(p.id, { ...p, grupo: false }); });
       if (!candidatos.size) {
         cuerpo.appendChild(el('p', { text: 'No hay a quién enviar. Puedes enviar a las personas de tu grupo desde cualquier lugar, o a personas de otros grupos que estén en el mismo lugar que tú.' }));
         return;
       }
       const lista = el('div', { class: 'lista-personas', role: 'radiogroup' });
-      [...candidatos.values()].sort((a, b) => (b.estado === 'rescate') - (a.estado === 'rescate')).forEach((p, i) => {
+      [...candidatos.values()].sort((a, b) => b.grupo - a.grupo).forEach((p, i) => {
         const id = 'para-' + p.id;
-        lista.appendChild(el('label', { class: 'persona' + (p.estado === 'rescate' ? ' rescate' : ''), for: id },
+        lista.appendChild(el('label', { class: 'persona', for: id },
           el('input', { type: 'radio', name: 'para', id, value: p.id, checked: ctx.para ? ctx.para === p.id : i === 0 }),
           el('span', { class: 'cara', text: p.avatar }),
-          el('span', {}, el('b', { text: p.nombre }), el('small', { text: (p.grupo ? 'Tu grupo' : 'Está aquí') + (p.estado === 'rescate' ? ' · 🆘 necesita ayuda' : '') }))));
+          el('span', {}, el('b', { text: p.nombre }), el('small', { text: p.grupo ? 'Tu grupo' : 'Está aquí' }))));
       });
       cuerpo.appendChild(el('h3', { text: '¿A quién?' }));
       cuerpo.appendChild(lista);
       cuerpo.appendChild(el('h3', { text: '¿Qué le envías?' }));
-      cuerpo.appendChild(selectorRecurso('rec-dar', null, 'comida'));
-      cuerpo.appendChild(campoNumero('cant-dar', 'Cantidad', 10));
-      cuerpo.appendChild(el('p', { class: 'subtitulo', text: params.envio_gratis ? '🫶 En tu territorio el envío es gratis.' : '📦 Enviar cuesta 10%: si mandas 10, llegan 9.' }));
+      cuerpo.appendChild(selectorRecurso('rec-dar', null, 'energia'));
+      cuerpo.appendChild(campoNumero('cant-dar', 'Cantidad', 1));
+      cuerpo.appendChild(el('p', { class: 'subtitulo', text: 'Tienes: ' + textoBolsa(Juego.recursos().energia, Juego.recursos().bolsa) }));
+      cuerpo.appendChild(el('p', { class: 'subtitulo', text: params.envio_gratis ? '🫶 En tu territorio enviar energía no pierde nada.' : '📦 Los productos llegan completos. La energía pierde 10% en el camino: si mandas 10, llegan 9.' }));
       const b = el('button', { class: 'boton grande' }, 'Enviar');
       b.addEventListener('click', () => conBoton(b, 'Enviando…', async () => {
         const r = await Juego.accion('dar', { p_para: valorRadio(cuerpo, 'para'), p_recurso: valorRadio(cuerpo, 'rec-dar'), p_cantidad: parseInt($('cant-dar').value, 10) });
@@ -237,76 +241,87 @@
     }
   });
 
-  // ------------------------------------------------------------------ Trabajo del territorio
-  registrar('trabajo', {
-    icono: '🛠️', titulo: () => {
-      const t = Juego.parametrosTerritorio(Juego.estado.grupo.territorio).trabajo;
-      return t ? t.icono + ' ' + t.nombre : 'Trabajo';
+  // ------------------------------------------------------------------ Recolectar (campo de la isla)
+  registrar('recolectar', {
+    icono: '🌱', titulo: () => {
+      const p = Juego.parametrosTerritorio(Juego.estado.grupo.territorio).producto;
+      return p ? p.lugar_icono + ' ' + p.lugar : 'Recolectar';
     },
     render(cuerpo, ctx, panel) {
-      const t = Juego.parametrosTerritorio(Juego.estado.grupo.territorio).trabajo;
-      const da = Object.entries(t.da).map(([k, v]) => '+' + v + ' ' + RECURSOS[k].nombre.toLowerCase()).join(' y ');
-      let desc;
-      if (t.tipo === 'cultivo') desc = 'Siembra pagando ' + (t.cuesta ? t.cuesta.monedas : 0) + ' monedas. Después de ' + t.espera_min + ' minutos de juego vuelve y cosecha ' + da + '.';
-      else if (t.tipo === 'minga') desc = 'Trabajo en comunidad: si hay al menos ' + t.minimo + ' personas de tu grupo aquí en la Casa Común, cada una gana ' + da + '. Se puede repetir cada ' + t.espera_min + ' minutos de juego.';
-      else desc = 'Produce ' + da + '. Puedes repetirlo cada ' + t.espera_min + ' minutos de juego.';
-      cuerpo.appendChild(el('p', { class: 'grande-texto', text: desc }));
+      const p = Juego.parametrosTerritorio(Juego.estado.grupo.territorio).producto;
+      cuerpo.appendChild(el('p', { class: 'grande-texto', text: 'Tu isla produce ' + p.icono + ' ' + p.nombre.toLowerCase() + '. Cada vez que recolectas ganas ' + p.por_vez + ' y gastas ' + p.cuesta + ' de energía. Puedes repetirlo cada ' + p.espera_seg + ' segundos de juego.' }));
+      cuerpo.appendChild(el('p', { text: 'Para ganar una oportunidad 🎟️ necesitas productos de 3 islas distintas: el tuyo y dos más. Cámbialos con otros grupos en el Mercado Central (en la Plaza del centro).' }));
       const estado = el('p', { class: 'estado-trabajo' });
+      const b = el('button', { class: 'boton grande' }, p.icono + ' Recolectar');
       cuerpo.appendChild(estado);
-      const b = el('button', { class: 'boton grande' }, 'Trabajar');
       cuerpo.appendChild(b);
       function pintar() {
         const j = Juego.estado.jugador, seg = Juego.segJuego();
-        if (t.tipo === 'cultivo') {
-          if (j.cultivo_listo_seg == null) { estado.textContent = 'La huerta está vacía.'; b.textContent = '🌱 Sembrar'; b.disabled = false; }
-          else if (seg < j.cultivo_listo_seg) { estado.textContent = '🌱 Creciendo… faltan ' + fmt(j.cultivo_listo_seg - seg) + ' de juego.'; b.textContent = 'Aún no está lista'; b.disabled = true; }
-          else { estado.textContent = '🌽 ¡La cosecha está lista!'; b.textContent = 'Cosechar'; b.disabled = false; }
-        } else {
-          const listo = j.ultimo_trabajo_seg == null ? 0 : Number(j.ultimo_trabajo_seg) + t.espera_min * 60;
-          if (seg < listo) { estado.textContent = '😮‍💨 Descansando… faltan ' + fmt(listo - seg) + ' de juego.'; b.disabled = true; }
-          else {
-            let extra = '';
-            if (t.tipo === 'minga') { const n = 1 + Red.presentes().filter(p => Juego.esDeMiGrupo(p.id)).length; extra = ' Ahora hay ' + n + (n === 1 ? ' persona' : ' personas') + ' de tu grupo aquí.'; }
-            estado.textContent = '✅ Listo para trabajar.' + extra; b.disabled = false;
-          }
-          b.textContent = t.icono + ' ' + t.nombre;
-        }
+        const listo = j.ultimo_recolecto_seg == null ? 0 : Number(j.ultimo_recolecto_seg) + Number(p.espera_seg);
+        const tengo = (Juego.recursos().bolsa || {})[p.id] || 0;
+        if (Juego.estado.reloj.estado !== 'corriendo') { estado.textContent = 'El juego no está corriendo.'; b.disabled = true; return; }
+        if (seg < listo) { estado.textContent = '⏳ Creciendo… faltan ' + fmt(listo - seg) + ' de juego. Tienes ' + tengo + ' ' + p.icono + '.'; b.disabled = true; }
+        else { estado.textContent = '✅ Listo para recolectar. Tienes ' + tengo + ' ' + p.icono + '.'; b.disabled = false; }
       }
       pintar();
       const reloj = setInterval(pintar, 1000);
       panel.limpiar.push(() => clearInterval(reloj));
-      b.addEventListener('click', () => conBoton(b, 'Trabajando…', async () => {
-        const r = await Juego.accion('trabajar', {});
+      b.addEventListener('click', () => conBoton(b, 'Recolectando…', async () => {
+        const r = await Juego.accion('recolectar', {});
         if (r) mensajeLocal(cuerpo, r.mensaje, 'ok');
       }).then(pintar));
     }
   });
 
-  // ------------------------------------------------------------------ Fondo común (Pueblo del Río)
-  registrar('fondo', {
-    icono: '🏺', titulo: 'Fondo común',
+  // ------------------------------------------------------------------ Armar una oportunidad
+  registrar('oportunidad', {
+    icono: '🎟️', titulo: 'Armar una oportunidad',
     render(cuerpo, ctx, panel) {
-      cuerpo.appendChild(el('p', { text: 'En la cooperativa lo de uno es de todos: guarden aquí lo que les sobre y saque quien lo necesite.' }));
-      const hay = el('div', { class: 'recursos' });
-      cuerpo.appendChild(hay);
+      cuerpo.appendChild(el('p', { class: 'grande-texto', text: 'Una oportunidad 🎟️ = 1 producto de 3 islas distintas.' }));
+      cuerpo.appendChild(el('p', { text: 'Las oportunidades son de todo el grupo: sirven para probar palabras en el texto. Elige 3 productos distintos de tu bolsa.' }));
+      const caja = el('div', { class: 'elegir-productos' });
+      const nota = el('p', { class: 'subtitulo' });
+      const b = el('button', { class: 'boton grande' }, '🎟️ Armar oportunidad');
+      cuerpo.append(caja, nota, b);
+      const elegidos = new Set();
       function pintar() {
-        const f = Juego.estado.grupo.fondo || {};
-        hay.innerHTML = '';
-        Object.keys(RECURSOS).forEach(k => hay.appendChild(el('div', { class: 'recurso' }, el('span', { class: 'ico', text: RECURSOS[k].icono }), el('b', { text: f[k] || 0 }), el('span', { text: RECURSOS[k].nombre }))));
+        const bolsa = Juego.recursos().bolsa || {};
+        caja.innerHTML = '';
+        PRODUCTOS.forEach(k => {
+          const n = Number(bolsa[k]) || 0;
+          if (!n) elegidos.delete(k);
+          const t = el('button', { class: 'ficha-producto' + (elegidos.has(k) ? ' elegido' : ''), disabled: n < 1, 'aria-pressed': elegidos.has(k) ? 'true' : 'false' },
+            el('span', { class: 'ico', text: RECURSOS[k].icono }), el('b', { text: RECURSOS[k].nombre }), el('small', { text: 'Tienes ' + n }));
+          t.addEventListener('click', () => {
+            if (elegidos.has(k)) elegidos.delete(k);
+            else if (elegidos.size < 3) elegidos.add(k);
+            pintar();
+          });
+          caja.appendChild(t);
+        });
+        const distintos = PRODUCTOS.filter(k => Number(bolsa[k]) > 0).length;
+        nota.textContent = elegidos.size === 3 ? 'Listo: ' + [...elegidos].map(k => RECURSOS[k].icono).join(' + ') + ' = 🎟️'
+          : distintos < 3 ? 'Tienes productos de ' + distintos + (distintos === 1 ? ' isla' : ' islas') + '. Consigue los que faltan en el Mercado Central.'
+          : 'Elige ' + (3 - elegidos.size) + ' más.';
+        b.disabled = elegidos.size !== 3;
       }
       pintar();
-      cuerpo.appendChild(selectorRecurso('rec-fondo', null, 'comida'));
-      cuerpo.appendChild(campoNumero('cant-fondo', 'Cantidad', 10));
-      const fila = el('div', { class: 'fila-botones' });
-      ['depositar', 'retirar'].forEach(op => {
-        const b = el('button', { class: 'boton ' + (op === 'retirar' ? 'sol' : '') }, op === 'depositar' ? 'Guardar en el fondo' : 'Sacar del fondo');
-        b.addEventListener('click', () => conBoton(b, '…', async () => {
-          const r = await Juego.accion('fondo_comun', { p_operacion: op, p_recurso: valorRadio(cuerpo, 'rec-fondo'), p_cantidad: parseInt($('cant-fondo').value, 10) });
-          if (r) { pintar(); mensajeLocal(cuerpo, r.mensaje, 'ok'); }
-        }));
-        fila.appendChild(b);
-      });
-      cuerpo.appendChild(fila);
+      b.addEventListener('click', () => conBoton(b, 'Armando…', async () => {
+        const r = await Juego.accion('armar_oportunidad', { p_productos: [...elegidos] });
+        if (r) { elegidos.clear(); mensajeLocal(cuerpo, r.mensaje, 'ok'); }
+      }).then(pintar));
+      panel.pintar = pintar;
+    },
+    refrescar(panel) { if (panel.pintar) panel.pintar(); }
+  });
+
+  // ------------------------------------------------------------------ Lugar de otro grupo
+  registrar('visita', {
+    icono: '🔒', titulo: 'Estás de visita',
+    render(cuerpo, ctx) {
+      const g = ctx.grupoLugar;
+      cuerpo.appendChild(el('p', { class: 'grande-texto', text: 'Este lugar es de ' + g.emoji + ' ' + g.nombre + '.' }));
+      cuerpo.appendChild(el('p', { text: 'Cada grupo tiene su propio texto, sus pistas y su producto. Puedes usar la Consola de otra isla (pagando la entrada de visitante) y comerciar en el Mercado Central.' }));
     }
   });
 
@@ -320,20 +335,20 @@
         const estados = { espera: '⏳ El juego aún no empieza.', corriendo: '▶ El juego está corriendo.', pausado: '⏸ El juego está en pausa.', terminado: '🏁 El juego terminó.' };
         cuerpo.appendChild(el('p', { class: 'grande-texto', text: estados[e.reloj.estado] }));
         if ((e.config.anuncio || '').trim()) cuerpo.appendChild(el('div', { class: 'anuncio-grande' }, el('b', { text: '📣 La profe dice: ' }), e.config.anuncio));
-        cuerpo.appendChild(el('h3', { text: '🏆 Ranking de los grupos' }));
+        cuerpo.appendChild(el('h3', { text: '🏆 Cuántos huecos ha llenado cada grupo' }));
         try {
           const rk = await Servidor.rpc('ranking_vivo');
           const tabla = el('div', { class: 'ranking' });
-          rk.sort((a, b) => b.puntaje - a.puntaje).forEach((g, i) => {
+          rk.sort((a, b) => b.resueltos - a.resueltos).forEach((g, i) => {
             const t = window.TERRITORIOS[g.territorio];
             tabla.appendChild(el('div', { class: 'fila-ranking' + (g.nombre === e.grupo.nombre ? ' mio' : '') },
               el('span', { class: 'pos', text: ['🥇', '🥈', '🥉'][i] || String(i + 1) }),
               el('span', { class: 'emoji', text: g.emoji }),
-              el('span', { class: 'nom' }, el('b', { text: g.nombre }), el('small', { text: t.emoji + ' ' + t.nombre + ' · ' + g.vivos + ' vivos · ' + g.muertos + ' fantasmas · ' + g.misiones + (g.misiones === 1 ? ' misión' : ' misiones') })),
-              el('span', { class: 'puntos-ranking', text: Math.round(g.puntaje) })));
+              el('span', { class: 'nom' }, el('b', { text: g.nombre }), el('small', { text: t.emoji + ' ' + t.nombre + ' · 🎟️ ' + g.oportunidades + (g.completo ? ' · 🏆 ¡texto completo!' : '') })),
+              el('span', { class: 'puntos-ranking', text: g.resueltos + '/18' })));
           });
           cuerpo.appendChild(tabla);
-          cuerpo.appendChild(el('p', { class: 'subtitulo', text: 'Puntaje = monedas + energía + comida + megas ÷ 5 + 25 por misión resuelta. Los fantasmas solo suman sus misiones.' }));
+          cuerpo.appendChild(el('p', { class: 'subtitulo', text: 'Gana el grupo que complete su texto primero. Cada grupo tiene un texto distinto sobre la historia del internet en Colombia.' }));
         } catch (err) { cuerpo.appendChild(el('p', { class: 'error-campo', text: err.message })); }
         if (e.reloj.estado === 'terminado') cuerpo.appendChild(el('a', { class: 'boton grande', href: 'final.html' }, '🏁 Ver resultados finales'));
       }
@@ -359,6 +374,6 @@
   window.Paneles = {
     iniciar, registrar, abrir, cerrar, refrescar,
     abierto: () => !!actual,
-    util: { el, RECURSOS, fmt, tarjetaTerritorio, selectorRecurso, valorRadio, campoNumero, conBoton, mensajeLocal }
+    util: { el, RECURSOS, PRODUCTOS, textoBolsa, fmt, tarjetaTerritorio, selectorRecurso, valorRadio, campoNumero, conBoton, mensajeLocal }
   };
 })();

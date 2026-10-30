@@ -9,46 +9,43 @@
 
   /** Estaciones (cosas con las que se interactúa) de cada lugar. */
   function estaciones(lugar, grupo, esMio) {
-    const terr = grupo ? window.TERRITORIOS[grupo.territorio] : null;
     const params = grupo ? Juego.parametrosTerritorio(grupo.territorio) : null;
-    const trabajo = params && params.trabajo;
+    const prod = params && params.producto;
     const lista = [];
     const add = (id, x, y, e, nombre, accion) => lista.push({ id, x, y, emoji: e, nombre, accion });
-    if (lugar === 'casa') {
-      add('grupo', 280, 300, '🪑', 'Mesa del grupo', 'Ver mi grupo');
-      add('ayudar', 500, 470, '📮', 'Buzón de ayudas', 'Enviar recursos');
-      if (esMio && trabajo && trabajo.lugar === 'casa') add('trabajo', 720, 300, trabajo.icono, trabajo.nombre, trabajo.tipo === 'cultivo' ? 'Sembrar o cosechar' : 'Trabajar');
-      if (esMio && params && params.fondo_comun) add('fondo', 500, 250, '🏺', 'Fondo común', 'Abrir el fondo');
-    } else if (lugar === 'archivo') {
-      add('consola', 500, 290, '🖥️', 'Consola de la API', 'Escribir una consulta');
-      add('misiones', 240, 330, '📜', 'Tablero de misiones', 'Ver misiones');
-      add('ayuda', 760, 330, '📖', 'Hoja de ayuda', 'Leer la hoja de ayuda');
-      add('historial', 760, 520, '🗂️', 'Mis consultas', 'Ver mis consultas');
-    } else if (lugar === 'mercado') {
-      add('mercado', 500, 300, '🧺', 'Puesto del mercado', 'Comprar o vender');
-      if (esMio && trabajo && trabajo.lugar === 'mercado') add('trabajo', 770, 330, trabajo.icono, trabajo.nombre, 'Trabajar');
-      add('ayudar', 230, 470, '🎁', 'Dar a alguien aquí', 'Enviar recursos');
-    } else if (lugar === 'plaza') {
-      add('tablero', 500, 280, '📋', 'Tablero de ofertas', 'Ver y publicar ofertas');
-      add('ayudar', 260, 470, '🎁', 'Dar a alguien aquí', 'Enviar recursos');
-    } else if (lugar === 'antena') {
-      add('megas', 380, 300, '📶', 'Recargar megas', 'Comprar megas');
-      add('senal', 640, 300, '📡', 'Estado de la señal', 'Ver la conexión');
-      if (esMio && trabajo && trabajo.lugar === 'antena') add('trabajo', 780, 500, trabajo.icono, trabajo.nombre, 'Trabajar');
+    if (lugar === 'archivo') {
+      if (esMio) {
+        add('texto', 500, 300, '📜', 'El texto del grupo', 'Llenar los huecos');
+        add('oportunidad', 250, 470, '🎟️', 'Armar oportunidad', 'Cambiar 3 productos por una oportunidad');
+        add('grupo', 760, 470, '🪑', 'Mesa del grupo', 'Ver mi grupo');
+      } else add('visita', 500, 300, '🔒', 'Texto de otro grupo', 'Ver de quién es este Archivo');
+    } else if (lugar === 'pistas') {
+      if (esMio) add('pistas', 500, 290, '🔎', 'Tablero de pistas', 'Leer las pistas');
+      else add('visita', 500, 290, '🔒', 'Pistas de otro grupo', 'Ver de quién son estas pistas');
+      add('ayuda', 760, 450, '📖', 'Hoja de ayuda', 'Leer la hoja de ayuda');
+    } else if (lugar === 'consola') {
+      add('consola', 500, 290, '💻', 'Consola de la API', 'Escribir una consulta');
+      add('ayuda', 240, 400, '📖', 'Hoja de ayuda', 'Leer la hoja de ayuda');
+      add('historial', 760, 400, '🗂️', 'Mis consultas', 'Ver mis consultas');
+      add('senal', 760, 560, '📡', 'Señal de cada isla', 'Comparar la conexión');
+    } else if (lugar === 'campo') {
+      if (esMio && prod) add('recolectar', 500, 300, prod.icono, prod.lugar, 'Recolectar ' + prod.nombre.toLowerCase());
+      else if (prod) add('visita', 500, 300, prod.icono, prod.lugar + ' de otro grupo', 'Ver de quién es');
+      add('ayudar', 260, 480, '🎁', 'Dar a alguien', 'Enviar energía o productos');
     } else if (lugar === 'salon') {
-      add('salon', 500, 280, '📣', 'Tablero central', 'Ver el estado del juego');
-      add('ayudar', 760, 470, '🎁', 'Dar a alguien aquí', 'Enviar recursos');
+      add('tablero', 500, 280, '📋', 'Tablero de ofertas', 'Ver y publicar ofertas');
+      add('ayudar', 240, 480, '🎁', 'Dar a alguien aquí', 'Enviar energía o productos');
+      add('salon', 760, 480, '🏆', 'Cómo van los grupos', 'Ver el avance de todos');
     }
     return lista;
   }
 
   const DECO = {
-    casa:    [['🛋️', 130, 230], ['🖼️', 380, 120], ['🪴', 880, 230], ['🖼️', 640, 120], ['🧸', 860, 560], ['🪴', 140, 590]],
-    archivo: [['📚', 120, 150], ['📚', 210, 150], ['📚', 790, 150], ['📚', 880, 150], ['🪴', 120, 600], ['🗄️', 300, 560]],
-    mercado: [['🍎', 140, 240], ['🥕', 230, 240], ['🧀', 780, 240], ['🍌', 870, 240], ['📦', 860, 600], ['🧺', 140, 600]],
-    plaza:   [['🌳', 130, 240], ['🌳', 870, 240], ['🪑', 760, 500], ['⛲', 500, 560], ['🌷', 140, 600], ['🌷', 860, 600]],
-    antena:  [['🔌', 140, 240], ['📻', 860, 240], ['🛰️', 500, 120], ['🔋', 140, 580], ['💡', 860, 580]],
-    salon:   [['🎈', 130, 140], ['🎈', 870, 140], ['🎉', 300, 120], ['🎉', 700, 120], ['🪑', 240, 560], ['🪑', 760, 300]]
+    archivo: [['📚', 120, 150], ['📚', 210, 150], ['📚', 790, 150], ['📚', 880, 150], ['🪴', 120, 600], ['🗄️', 880, 600]],
+    pistas:  [['🗺️', 140, 240], ['🧭', 860, 240], ['🔦', 140, 580], ['🗝️', 300, 560], ['🪴', 880, 600]],
+    consola: [['🔌', 140, 240], ['📻', 860, 240], ['🛰️', 500, 120], ['🔋', 140, 580], ['💡', 400, 600]],
+    campo:   [['🌳', 130, 240], ['🌳', 870, 240], ['🧺', 760, 300], ['🌷', 140, 600], ['🌾', 860, 600], ['🐝', 640, 180]],
+    salon:   [['🎈', 130, 140], ['🎈', 870, 140], ['🎉', 300, 120], ['🎉', 700, 120], ['🧺', 130, 300], ['📦', 870, 300]]
   };
 
   class EscenaInterior extends Phaser.Scene {
@@ -63,8 +60,9 @@
     }
 
     create() {
-      const terr = this.grupoLugar ? window.TERRITORIOS[this.grupoLugar.territorio] : { color: '#ffd9e6', tinta: '#a0446c', emoji: '🎪', nombre: 'Plaza Central' };
+      const terr = this.grupoLugar ? window.TERRITORIOS[this.grupoLugar.territorio] : { color: '#ffd9e6', tinta: '#a0446c', emoji: '🤝', nombre: 'Plaza Central' };
       const L = window.MundoDatos.LUGARES[this.lugar];
+      const NL = window.MundoDatos.nombreLugar(this.lugar, this.grupoLugar && this.grupoLugar.territorio, this.grupoLugar && Juego.parametrosTerritorio(this.grupoLugar.territorio));
       this.cameras.main.setBackgroundColor('#33405a');
       this.cameras.main.setBounds(-200, -120, W + 400, H + 240);
 
@@ -86,12 +84,12 @@
       this.add.image(0, 0, clave).setOrigin(0).setDepth(-1000);
       rotulo(this, PUERTA.x, H + 26, '⬇ Salir', 20).setDepth(5000);
       // Título del lugar
-      const titulo = L.emoji + ' ' + L.nombre + (this.grupoLugar ? ' · ' + this.grupoLugar.emoji + ' ' + this.grupoLugar.nombre : '');
+      const titulo = NL.emoji + ' ' + NL.nombre + (this.grupoLugar ? ' · ' + this.grupoLugar.emoji + ' ' + this.grupoLugar.nombre : '');
       rotulo(this, W / 2, 44, titulo, 30).setDepth(5000);
       if (this.grupoLugar) rotulo(this, W / 2, 86, terr.emoji + ' ' + terr.nombre + (this.esMio ? ' · tu territorio' : ' · estás de visita'), 18, terr.tinta).setDepth(5000);
 
       (DECO[this.lugar] || []).forEach(([e, x, y]) => emoji(this, x, y, e, 46).setDepth(y));
-      if (this.lugar === 'archivo' && this.grupoLugar) this.dibujarSenal(terr);
+      if (this.lugar === 'consola' && this.grupoLugar) this.dibujarSenal(terr);
 
       // Estaciones
       this.estaciones = estaciones(this.lugar, this.grupoLugar, this.esMio);
@@ -100,7 +98,7 @@
         sg.fillStyle(0xffffff, 0.75); sg.fillEllipse(s.x, s.y - 6, 120, 44);
         sg.lineStyle(3, hex(L.techo), 1); sg.strokeEllipse(s.x, s.y - 6, 120, 44);
         s.obj = emoji(this, s.x, s.y, s.emoji, 60).setDepth(s.y).setInteractive({ useHandCursor: true });
-        s.obj.on('pointerdown', () => this.usarEstacion(s, true));
+        s.obj.on('pointerdown', p => { if (p.event && p.event.target && p.event.target !== this.game.canvas) return; this.usarEstacion(s, true); });
         this.add.text(s.x, s.y + 22, s.nombre, {
           fontSize: '15px', fontFamily: 'Nunito, system-ui, sans-serif', fontStyle: '800', color: '#33405a',
           backgroundColor: '#ffffff', padding: { x: 8, y: 2 }, resolution: RES_TEXTO

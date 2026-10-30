@@ -30,25 +30,26 @@
       else if (/Syntax Error|Expected/.test(e)) c.push('🧩 Hay un error de escritura: revisa que cada { tenga su } y cada ( su ).');
       else if (/must have a selection/.test(e)) c.push('📦 Ese campo es una caja: dentro de él tienes que pedir otros campos con { }.');
       else if (/introspection/.test(e)) c.push('🔒 Esta API no deja ver su esquema completo. Usa la Hoja de ayuda.');
-      c.push('Aunque la respuesta fue un error, igual se gastó al menos 1 mega: pedir datos siempre cuesta.');
+      c.push('Aunque la respuesta fue un error, igual se gastó al menos 1 de energía: pedir datos siempre cuesta.');
     }
-    if (/\bcontent\b/.test(t)) c.push('🐘 Pediste content: es el campo más pesado. Si no lo necesitas, quítalo y gastarás menos megas.');
+    if (/\bcontent\b/.test(t)) c.push('🐘 Pediste content: es el campo más pesado. Si no lo necesitas, quítalo y gastarás menos energía.');
     if (/\b(slug|categories|tipo)\b/.test(t) && cobro && cobro.necesarios > 4) c.push('✂️ ¿Necesitas todos esos campos? Cada campo extra se cobra.');
     if (r && r.bytes > 8 * 1024) c.push('📦 Esta respuesta fue grande (' + kb(r.bytes) + '). Con first: N puedes pedir menos resultados.');
     if (/first\s*:\s*100/.test(t) && /hasNextPage[\s\S]*true/.test(r ? r.texto : '')) c.push('➡️ Hay más resultados: copia el endCursor y úsalo en after: "…" para traer la siguiente página.');
-    if (cobro && cobro.alcanzo < 1) c.push('📵 Te quedaste sin megas a mitad de camino: solo llegó una parte. Recarga en la Antena.');
+    if (cobro && cobro.alcanzo < 1) c.push('🔋 Te quedaste sin energía a mitad de camino: solo llegó una parte. Espera a que se recargue o pide energía a tu grupo.');
+    if (r && r.ok && /"nodes"\s*:\s*\[\s*\]/.test(r.texto || '')) c.push('🔎 La búsqueda no encontró nada. Prueba otra palabra, más corta o sin tildes, o busca en la otra colección (eventos o documentos).');
     return c;
   }
 
   // ---------------------------------------------------------------- Consola
   Paneles.registrar('consola', {
-    icono: '🖥️', titulo: ctx => 'Consola del Archivo' + (ctx.grupoLugar ? ' · ' + ctx.grupoLugar.emoji + ' ' + ctx.grupoLugar.nombre : ''), ancho: true,
+    icono: '💻', titulo: ctx => 'Consola' + (ctx.grupoLugar ? ' · ' + ctx.grupoLugar.emoji + ' ' + ctx.grupoLugar.nombre : ''), ancho: true,
     render(cuerpo, ctx, panel) {
       const g = ctx.grupoLugar;
       const terr = window.TERRITORIOS[g.territorio];
       const visita = g.id !== Juego.estado.grupo.id;
 
-      const info = el('div', { class: 'info-conexion' }, el('span', { text: 'Conectando con el Archivo…' }));
+      const info = el('div', { class: 'info-conexion' }, el('span', { text: 'Conectando con la API…' }));
       const area = el('textarea', { id: 'consola-texto', class: 'consola', rows: 9, placeholder: '{ pages { nodes { title } } }', 'aria-label': 'Consulta GraphQL' });
       area.value = ultimaConsulta;
       const proteccion = Teclado.proteger(area, { alBloquear: t => Juego.aviso(t, 'error') });
@@ -84,20 +85,20 @@
 
       function mostrar(res) {
         if (!res) {
-          pintarMedidas([['Fuente', '—'], ['Tamaño', '—'], ['Megas', '—'], ['Tiempo', '—']]);
+          pintarMedidas([['Fuente', '—'], ['Tamaño', '—'], ['Energía', '—'], ['Tiempo', '—']]);
           salida.innerHTML = 'Aquí aparecerá el JSON que responde la API.';
           return;
         }
         pintarMedidas([
           ['Fuente', res.fuente === 'real' ? 'API real' : res.fuente === 'respaldo' ? 'Copia guardada' : '—', res.fuente],
           ['Tamaño', res.bytes != null ? kb(res.bytes) : '—'],
-          ['Megas', res.cobrado != null ? String(res.cobrado) + (res.necesarios > res.cobrado ? ' de ' + res.necesarios : '') : '—', 'megas'],
+          ['Energía', res.cobrado != null ? '⚡' + String(res.cobrado) + (res.necesarios > res.cobrado ? ' de ' + res.necesarios : '') : '—', 'megas'],
           ['Tiempo', res.ms != null ? (res.ms / 1000).toFixed(1) + ' s' : '—']
         ]);
         if (res.corte) salida.innerHTML = '<span class="z">📵 Se cortó la señal antes de que llegara la respuesta.\nInténtalo otra vez (o busca un lugar con mejor conexión).</span>';
         else {
           let txt = res.texto || '';
-          if (res.alcanzo < 1) txt = txt.slice(0, Math.floor(txt.length * res.alcanzo)) + '\n\n✂️ … (se acabaron tus megas: no llegó el resto)';
+          if (res.alcanzo < 1) txt = txt.slice(0, Math.floor(txt.length * res.alcanzo)) + '\n\n✂️ … (se acabó tu energía: no llegó el resto)';
           salida.innerHTML = colorear(txt);
         }
         listaConsejos.innerHTML = '';
@@ -110,24 +111,19 @@
         const a = p.archivo;
         info.innerHTML = '';
         info.appendChild(el('span', { class: 'senal-mini' }, ...[1, 2, 3, 4].map(k => el('i', { class: k <= terr.rasgos[0].nivel ? 'on' : '' }))));
-        info.appendChild(el('span', { text: terr.rasgos[0].nota + ' · cada KB cuesta ' + a.mult_megas + ' megas · espera ~' + a.retardo + ' s · cortes ' + Math.round(a.corte * 100) + '%' + (visita ? ' · visitantes pagan ' + a.entrada + ' monedas' : '') }));
+        info.appendChild(el('span', { text: terr.rasgos[0].nota + ' · cada KB cuesta ' + a.mult_megas + ' de energía · espera ~' + a.retardo + ' s · cortes ' + Math.round(a.corte * 100) + '%' + (visita ? ' · visitantes pagan ' + a.entrada + ' de energía al entrar' : '') }));
       }).catch(() => {});
 
-      // Guía de la Misión 0
-      Servidor.accion('mis_misiones').then(m => {
-        const m0 = m.misiones.find(x => x.id === 'm0');
-        if (m0 && !m0.resuelta) {
-          guia.hidden = false;
-          guia.append(
-            el('b', { text: '🧭 Misión 0: tu primera consulta' }),
-            el('ol', {},
-              el('li', {}, 'Escribe a mano, letra por letra: ', el('code', { text: '{ pages { nodes { title } } }' })),
-              el('li', { text: 'Presiona «Enviar consulta». La API responde con un JSON.' }),
-              el('li', { text: 'Cada "title" es una página del sitio. Cuéntalas.' }),
-              el('li', { text: 'Ve al Tablero de misiones (📜) y escribe tu respuesta.' })),
-            el('p', { class: 'subtitulo', text: 'Las llaves { } son como cajas: pages contiene nodes, y cada nodo tiene un title. Pides solo lo que necesitas.' }));
-        }
-      }).catch(() => {});
+      // Guía corta
+      if (!visita) {
+        guia.hidden = false;
+        guia.append(
+          el('b', { text: '🧭 ¿Qué escribo aquí?' }),
+          el('ol', {},
+            el('li', {}, 'En el edificio 🔎 Pistas de tu isla está la consulta que necesitas, con algunas letras escondidas.'),
+            el('li', { text: 'Escríbela aquí a mano, completando la palabra que falta, y presiona «Enviar consulta».' }),
+            el('li', { text: 'Busca el dato en la respuesta y llévalo al 📜 Archivo para probarlo en su hueco.' })));
+      }
 
       enviar.addEventListener('click', async () => {
         const texto = area.value.trim();
@@ -138,7 +134,7 @@
         try {
           inicio = await Juego.accion('iniciar_consulta', { p_lugar_grupo: g.id }, { silencioso: true });
         } catch (e) { Juego.aviso(e.message, 'error'); enviar.disabled = false; return; }
-        if (inicio.entrada > 0) Juego.aviso('Pagaste ' + inicio.entrada + ' monedas por usar este Archivo como visitante.', 'ok');
+        if (inicio.entrada > 0) Juego.aviso('Pagaste ' + inicio.entrada + ' de energía por usar esta Consola como visitante.', 'ok');
 
         progreso.hidden = false;
         const barra = progreso.querySelector('i');
@@ -172,70 +168,133 @@
           alcanzo: cobro ? Number(cobro.alcanzo) : 1
         };
         res.consejos = consejos(texto, r, cobro);
-        if (inicio.corte) res.consejos.unshift('📵 En este territorio la señal se cae a veces. Se cobró 1 mega por el intento.');
+        if (inicio.corte) res.consejos.unshift('📵 En este territorio la señal se cae a veces. Se cobró 1 de energía por el intento.');
         ultimoResultado = res;
         mostrar(res);
-        if (cobro) Juego.aviso('Esta consulta gastó ' + cobro.cobrado + (cobro.cobrado === 1 ? ' mega.' : ' megas.'), cobro.alcanzo < 1 ? 'error' : 'ok');
+        if (cobro) Juego.aviso('Esta consulta gastó ⚡' + cobro.cobrado + ' de energía.', cobro.alcanzo < 1 ? 'error' : 'ok');
         enviar.disabled = false;
       });
     }
   });
 
-  // ---------------------------------------------------------------- Misiones
-  Paneles.registrar('misiones', {
-    icono: '📜', titulo: 'Misiones del Archivo', ancho: true,
+  // ---------------------------------------------------------------- El texto con huecos
+  Paneles.registrar('texto', {
+    icono: '📜', titulo: 'El texto del grupo', ancho: true,
     render(cuerpo, ctx, panel) {
-      cuerpo.appendChild(el('p', { text: 'Resuelve las misiones consultando la API en un Archivo. Cada estudiante tiene su propia versión de cada pregunta.' }));
-      const lista = el('div', { class: 'lista-misiones' }, el('p', { text: 'Cargando misiones…' }));
-      cuerpo.appendChild(lista);
+      const borradores = panel.borradores = panel.borradores || {};
+      panel.pintar = async () => {
+        let d;
+        try { d = await Servidor.accion('mi_texto'); }
+        catch (e) { cuerpo.innerHTML = ''; cuerpo.appendChild(el('p', { class: 'error-campo', text: e.message })); return; }
+        // Guardar lo que estaban escribiendo antes de repintar
+        cuerpo.querySelectorAll('input.hueco').forEach(i => { borradores[i.dataset.n] = i.value; });
+        const enfocado = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.n : null;
+        const e = Juego.estado;
+        const aqui = e.jugador.escena === e.grupo.id + ':archivo' || Juego.escenaId === e.grupo.id + ':archivo';
+        cuerpo.innerHTML = '';
+        cuerpo.appendChild(el('div', { class: 'texto-cabeza' },
+          el('div', {}, el('p', { class: 'rotulo-campo', text: 'Tema ' + d.tema + ' · ' + d.titulo }), el('h3', { class: 'pregunta-grupo', text: d.pregunta })),
+          el('div', { class: 'texto-contadores' },
+            el('span', { class: 'contador-grande' + (d.oportunidades === 0 ? ' critico' : ''), title: 'Oportunidades del grupo' }, '🎟️ ', el('b', { text: String(d.oportunidades) }), el('small', { text: 'oportunidades' })),
+            el('span', { class: 'contador-grande', title: 'Huecos llenos' }, '📜 ', el('b', { text: d.resueltos + '/18' }), el('small', { text: 'huecos' })))));
+        if (!aqui && !d.completo) cuerpo.appendChild(el('p', { class: 'nota-texto', text: '👀 Aquí solo puedes leer. Para probar palabras ve al 📜 Archivo de tu isla.' }));
+        else if (!d.completo) cuerpo.appendChild(el('p', { class: 'nota-texto', text: 'Escribe la palabra en su hueco y presiona Enter o «Probar». Si aciertas, queda fija. Si fallas, el grupo pierde una oportunidad 🎟️.' }));
 
-      async function pintar() {
-        let datos;
-        try { datos = await Servidor.accion('mis_misiones'); }
-        catch (e) { lista.innerHTML = ''; lista.appendChild(el('p', { class: 'error-campo', text: e.message })); return; }
-        lista.innerHTML = '';
-        const dif = { facil: 'fácil', media: 'media', dificil: 'difícil' }[datos.dificultad];
-        lista.appendChild(el('p', { class: 'subtitulo', text: 'Dificultad: ' + dif + '. Una respuesta equivocada cuesta 2 monedas.' }));
-        datos.misiones.forEach(m => {
-          const tarjeta = el('div', { class: 'mision' + (m.resuelta ? ' resuelta' : '') + (m.bloqueada ? ' bloqueada' : '') });
-          tarjeta.appendChild(el('div', { class: 'mision-cabeza' },
-            el('span', { class: 'nivel ' + m.nivel.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''), text: m.nivel }),
-            el('b', { text: m.titulo }),
-            el('span', { class: 'premio', text: m.resuelta ? '✅ +' + m.ganado : '🪙 ' + m.recompensa })));
-          if (m.bloqueada) { tarjeta.appendChild(el('p', { class: 'subtitulo', text: '🔒 Resuelve primero la Misión 0.' })); lista.appendChild(tarjeta); return; }
-          tarjeta.appendChild(el('p', { class: 'pregunta', text: m.pregunta }));
-          if (m.pista && !m.resuelta) {
-            const det = el('details', { class: 'pista' }, el('summary', { text: '💡 Ver pista' }), el('code', { text: m.pista }));
-            tarjeta.appendChild(det);
+        const hoja = el('div', { class: 'texto-huecos' });
+        const porN = new Map(d.huecos.map(h => [h.n, h]));
+        let ultimaCaja = null;
+        d.texto.split(/(\{\d+\})/).forEach(trozo => {
+          const m = trozo.match(/^\{(\d+)\}$/);
+          if (!m) {
+            // La puntuación que sigue a un hueco se queda pegada a él (no salta de línea)
+            const p = trozo.match(/^[.,;:)]+/);
+            if (p && ultimaCaja) { ultimaCaja.appendChild(document.createTextNode(p[0])); trozo = trozo.slice(p[0].length); }
+            hoja.appendChild(document.createTextNode(trozo));
+            ultimaCaja = null;
+            return;
           }
-          if (!m.resuelta) {
-            const id = 'resp-' + m.id;
-            const input = el('input', { id, class: 'respuesta', maxlength: 100, placeholder: 'Tu respuesta', 'aria-label': 'Respuesta a ' + m.titulo });
-            Teclado.proteger(input, { alBloquear: t => Juego.aviso(t, 'error') });
-            input.addEventListener('keydown', e => { if (e.key === 'Enter') b.click(); });
-            const b = el('button', { class: 'boton' }, 'Responder');
-            const nota = el('p', { class: 'nota-mision' });
-            if (m.espera_hasta && Date.parse(m.espera_hasta) > Date.parse(datos.ahora)) {
-              nota.textContent = '⏳ Muchos intentos seguidos. Revisa tus datos y espera ' + fmt((Date.parse(m.espera_hasta) - Date.parse(datos.ahora)) / 1000) + '.';
-            }
-            b.addEventListener('click', () => conBoton(b, '…', async () => {
-              if (!input.value.trim()) { nota.textContent = 'Escribe una respuesta.'; return; }
-              try {
-                const r = await Juego.accion('responder_mision', { p_mision: m.id, p_respuesta: input.value }, { silencioso: true });
-                nota.textContent = r.mensaje;
-                nota.className = 'nota-mision ' + (r.correcta ? 'ok' : 'mal');
-                Juego.aviso(r.mensaje, r.correcta ? 'ok' : 'error');
-                if (r.correcta) setTimeout(pintar, 900);
-              } catch (e) { nota.textContent = e.message; nota.className = 'nota-mision mal'; }
-            }));
-            tarjeta.appendChild(el('div', { class: 'fila-respuesta' }, input, b));
-            tarjeta.appendChild(nota);
+          const n = Number(m[1]), h = porN.get(n);
+          if (h && h.resuelto) {
+            ultimaCaja = el('span', { class: 'hueco-caja' }, el('span', { class: 'hueco-listo', title: 'Hueco ' + n + (h.por ? ' · lo llenó ' + h.por : '') }, h.respuesta));
+            hoja.appendChild(ultimaCaja);
+            return;
           }
-          lista.appendChild(tarjeta);
+          const input = el('input', { class: 'hueco', 'data-n': n, maxlength: 40, autocomplete: 'off', spellcheck: 'false',
+            placeholder: String(n), 'aria-label': 'Hueco ' + n, disabled: !aqui || d.oportunidades < 1 || e.reloj.estado !== 'corriendo' });
+          input.value = borradores[n] || '';
+          input.style.width = Math.max(4, (input.value.length || 4) + 1) + 'ch';
+          input.addEventListener('input', () => { borradores[n] = input.value; input.style.width = Math.max(4, input.value.length + 1) + 'ch'; });
+          Teclado.proteger(input, { alBloquear: t => Juego.aviso(t, 'error') });
+          const probar = el('button', { class: 'boton mini probar', disabled: input.disabled, title: 'Probar el hueco ' + n }, 'Probar');
+          const enviar = () => conBoton(probar, '…', async () => {
+            if (!input.value.trim()) { Juego.aviso('Escribe una palabra en el hueco ' + n + '.', 'error'); return; }
+            const r = await Juego.accion('probar_hueco', { p_n: n, p_respuesta: input.value }, { silencioso: true }).catch(err => { Juego.aviso(err.message, 'error'); return null; });
+            if (!r) return;
+            Juego.aviso(r.mensaje, r.correcta ? 'ok' : 'error');
+            if (r.correcta) delete borradores[n];
+            else { input.classList.add('mal'); setTimeout(() => input.classList.remove('mal'), 900); }
+            setTimeout(panel.pintar, r.correcta ? 300 : 900);
+          });
+          input.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); enviar(); } });
+          probar.addEventListener('click', enviar);
+          ultimaCaja = el('span', { class: 'hueco-caja' }, input, probar);
+          hoja.appendChild(ultimaCaja);
         });
-      }
-      pintar();
+        cuerpo.appendChild(hoja);
+        if (d.completo) {
+          cuerpo.appendChild(el('div', { class: 'idea-final' },
+            el('p', { class: 'rotulo-campo', text: '🏆 ¡Completaron el texto! La idea clave para tu reflexión:' }),
+            el('p', { class: 'idea', text: d.idea })));
+        } else if (aqui && d.oportunidades < 1) {
+          cuerpo.appendChild(el('div', { class: 'sin-oportunidades' },
+            el('b', { text: '🎟️ Se acabaron las oportunidades.' }),
+            ' Recolecten el producto de su isla, cámbienlo en el Mercado Central por productos de otras islas y armen una oportunidad aquí con 3 productos distintos.'));
+        }
+        if (enfocado) { const f = cuerpo.querySelector('input.hueco[data-n="' + enfocado + '"]'); if (f && !f.disabled) f.focus(); }
+      };
+      cuerpo.appendChild(el('p', { text: 'Cargando el texto…' }));
+      panel.pintar();
+    },
+    refrescar(panel) {
+      // No repintar mientras alguien escribe
+      if (panel.pintar && !(document.activeElement && document.activeElement.classList.contains('hueco'))) panel.pintar();
     }
+  });
+
+  // ---------------------------------------------------------------- Pistas
+  Paneles.registrar('pistas', {
+    icono: '🔎', titulo: 'Tablero de pistas', ancho: true,
+    render(cuerpo, ctx, panel) {
+      panel.pintar = async () => {
+        let d;
+        try { d = await Servidor.accion('mis_pistas'); }
+        catch (e) { cuerpo.innerHTML = ''; cuerpo.appendChild(el('p', { class: 'error-campo', text: e.message })); return; }
+        cuerpo.innerHTML = '';
+        cuerpo.appendChild(el('p', { text: 'Cada pista dice qué buscar y te da la consulta con letras escondidas. Complétala, escríbela en la 💻 Consola y lleva el dato al 📜 Archivo. Cuando llenan un hueco se abre la pista siguiente; cada vez esconden más letras.' }));
+        const niveles = { 1: 'Pistas fáciles', 2: 'Pistas medias', 3: 'Pistas difíciles' };
+        let nivelActual = 0, lista = null;
+        d.pistas.forEach(p => {
+          if (p.nivel !== nivelActual) {
+            nivelActual = p.nivel;
+            cuerpo.appendChild(el('h3', { class: 'nivel-pistas n' + p.nivel, text: niveles[p.nivel] + (p.nivel === 1 ? ' (huecos 1 a 6)' : p.nivel === 2 ? ' (huecos 7 a 12)' : ' (huecos 13 a 18)') }));
+            lista = el('div', { class: 'lista-pistas' });
+            cuerpo.appendChild(lista);
+          }
+          if (p.bloqueada) {
+            lista.appendChild(el('div', { class: 'pista-tarjeta bloqueada' }, el('span', { class: 'num', text: p.n }), el('span', { class: 'subtitulo', text: '🔒 Se abre cuando llenen el hueco ' + (p.n - 1) + '.' })));
+            return;
+          }
+          lista.appendChild(el('div', { class: 'pista-tarjeta' + (p.resuelto ? ' resuelta' : '') },
+            el('span', { class: 'num', text: p.resuelto ? '✓' : p.n }),
+            el('div', {},
+              el('p', { class: 'pista-pregunta', text: 'Hueco ' + p.n + ': ' + p.pregunta }),
+              /^\{/.test(p.consulta) ? el('code', { class: 'pista-consulta', text: p.consulta }) : el('p', { class: 'subtitulo', text: p.consulta }))));
+        });
+      };
+      cuerpo.appendChild(el('p', { text: 'Cargando pistas…' }));
+      panel.pintar();
+    },
+    refrescar(panel) { if (panel.pintar) panel.pintar(); }
   });
 
   // ---------------------------------------------------------------- Hoja de ayuda
@@ -246,7 +305,14 @@
     render(cuerpo) {
       const sec = (titulo, ...contenido) => el('details', { class: 'seccion-ayuda' }, el('summary', { text: titulo }), el('div', {}, ...contenido));
       cuerpo.append(
-        el('p', { class: 'grande-texto', text: 'Todo lo que necesitas para hablar con la API de Historia del Internet en Colombia.' }),
+        el('p', { class: 'grande-texto', text: 'Todo lo que necesitas para jugar y para hablar con la API de Historia del Internet en Colombia.' }),
+        sec('🧭 Cómo se juega',
+          el('ol', {},
+            el('li', {}, el('b', { text: '📜 Archivo' }), ' (en el centro de tu isla): ahí está la pregunta de tu grupo y un texto con 18 huecos. Escriben la palabra y presionan «Probar».'),
+            el('li', {}, el('b', { text: '🔎 Pistas' }), ': cada hueco tiene una pista con la consulta que deben escribir (con letras escondidas). Al llenar un hueco se abre la pista siguiente.'),
+            el('li', {}, el('b', { text: '💻 Consola' }), ': ahí escriben la consulta a mano. Consultar gasta energía ⚡.'),
+            el('li', {}, el('b', { text: '🎟️ Oportunidades' }), ': empiezan con 4. Cada palabra equivocada cuesta una. Para conseguir más: recolecten el producto de su isla 🌱, cámbienlo en el 🤝 Mercado Central por productos de otras islas y, en el Archivo, cambien 3 productos distintos por una oportunidad.'),
+            el('li', { text: 'Cuando llenen los 18 huecos aparece la idea clave del texto. ¡Gana el primer grupo en completarlo!' }))),
         sec('🍽️ ¿Qué es una API?',
           el('p', { text: 'Una API es como el mesero de un restaurante: tú no entras a la cocina (la base de datos); le haces un pedido al mesero y él te trae lo que pediste.' }),
           el('p', { text: 'Esta API vive en https://historiasinternetpre.uniandes.edu.co/graphql y guarda eventos, personajes, entrevistas, documentos y términos de la historia del internet en Colombia.' })),
@@ -280,17 +346,18 @@
             el('li', {}, el('b', { text: 'Syntax Error: Expected "}"' }), ': falta cerrar una llave.'),
             el('li', {}, el('b', { text: 'must have a selection of subfields' }), ': ese campo es una caja; pide campos dentro con { }.'),
             el('li', { text: 'Los errores también gastan megas (mínimo 1). Revisa antes de enviar.' }))),
-        sec('📶 ¿Por qué cuesta megas?',
-          el('p', { text: 'Cada consulta trae datos por la red y los datos pesan. El juego cobra según el tamaño real de la respuesta, multiplicado por lo cara que sea la conexión de tu territorio.' }),
+        sec('⚡ ¿Por qué consultar cuesta energía?',
+          el('p', { text: 'Cada consulta trae datos por la red y los datos pesan. El juego cobra energía según el tamaño real de la respuesta, multiplicado por lo cara que sea la conexión del territorio donde consultas.' }),
           el('ul', {},
             el('li', { text: '20 eventos con title y fecha: unos 2,3 KB.' }),
             el('li', { text: 'Los mismos 20 con todos los campos: unos 5,4 KB (más del doble).' }),
-            el('li', { text: 'En Ciudad Luz cada KB cuesta medio mega; en Montaña Alta, dos y medio. La misma pregunta no cuesta lo mismo para todos.' }))),
+            el('li', { text: 'En Ciudad Luz cada KB cuesta medio punto de energía; en Isla Sol, tres. La misma pregunta no cuesta lo mismo para todos.' }),
+            el('li', { text: 'La energía se recarga sola con el tiempo, más rápido en unos territorios que en otros.' }))),
         sec('🎮 Controles del juego',
           el('ul', {},
-            el('li', { text: 'Flechas o W A S D: caminar.' }),
+            el('li', { text: 'Flechas o W A S D: caminar. En el celular, la palanca de la pantalla.' }),
             el('li', { text: 'E, Enter o Espacio: entrar a un lugar o usar lo que tienes cerca.' }),
-            el('li', { text: 'M: misiones · G: mi grupo · H: esta hoja · Esc: cerrar ventanas.' }),
+            el('li', { text: 'M: el texto del grupo · G: mi grupo · H: esta hoja · Esc: cerrar ventanas.' }),
             el('li', { text: '1 👋 2 😀 3 ❤️ 4 🆘 5 👍 6 🤝: gestos que ven quienes están cerca.' })))
       );
       cuerpo.querySelector('details').open = true;
@@ -307,13 +374,13 @@
         cuerpo.innerHTML = '';
         if (!filas.length) { cuerpo.appendChild(el('p', { text: 'Aún no has hecho consultas.' })); return; }
         const total = filas.reduce((a, f) => a + (f.megas || 0), 0);
-        cuerpo.appendChild(el('p', { class: 'subtitulo', text: 'Tus últimas ' + filas.length + ' consultas gastaron ' + total + ' megas.' }));
+        cuerpo.appendChild(el('p', { class: 'subtitulo', text: 'Tus últimas ' + filas.length + ' consultas gastaron ⚡' + total + ' de energía.' }));
         filas.forEach(f => {
           const t = window.TERRITORIOS[f.territorio];
           cuerpo.appendChild(el('div', { class: 'consulta-pasada' + (f.ok ? '' : ' fallida') },
             el('div', { class: 'cabeza' },
               el('span', { text: new Date(f.momento).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) + ' · ' + (t ? t.emoji + ' ' + t.nombre : '') }),
-              el('b', { text: (f.corte ? '📵 corte · ' : f.ok ? '' : '⚠️ error · ') + kb(f.bytes || 0) + ' · ' + f.megas + ' megas' })),
+              el('b', { text: (f.corte ? '📵 corte · ' : f.ok ? '' : '⚠️ error · ') + kb(f.bytes || 0) + ' · ⚡' + f.megas })),
             el('pre', { class: 'json chico', text: f.texto })));
         });
       } catch (e) { cuerpo.innerHTML = ''; cuerpo.appendChild(el('p', { class: 'error-campo', text: e.message })); }

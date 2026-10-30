@@ -32,7 +32,7 @@
 
   // ------------------------------------------------------------------ datos
   async function cargarGrupos() {
-    const filas = await Servidor.leer('grupos', 'id, nombre, emoji, territorio, isla, fondo, creado_en');
+    const filas = await Servidor.leer('grupos', 'id, nombre, emoji, territorio, isla, oportunidades, completo_en, creado_en');
     J.grupos = filas;
     J.gruposPorId = new Map(filas.map(g => [g.id, g]));
     J.gruposPorIsla = new Map(filas.filter(g => g.isla != null).map(g => [g.isla, g]));
@@ -45,7 +45,7 @@
 
   async function cargarMiembros() {
     const filas = await Servidor.leer('jugadores',
-      'id, nombre, avatar, estado, energia, comida, datos, monedas, rescate_hasta_seg, causa, creado_en, misiones_ok',
+      'id, nombre, avatar, estado, energia, bolsa, huecos_ok, creado_en',
       ['grupo_id', J.estado.grupo.id]);
     J.miembros = new Map(filas.map(f => [f.id, f]));
     HUD.actualizarAlertas();
@@ -65,7 +65,7 @@
     J.recibido = Date.now();
     J.offset = Date.parse(e.reloj.ahora) - J.recibido;
     const g = J.gruposPorId.get(e.grupo.id);
-    if (g) Object.assign(g, { territorio: e.grupo.territorio, fondo: e.grupo.fondo });
+    if (g) Object.assign(g, { territorio: e.grupo.territorio, oportunidades: e.grupo.oportunidades });
     if (antes && antes !== e.jugador.estado) {
       const esc = J.escenaActiva;
       if (esc && esc.yo) esc.yo.setEstado(e.jugador.estado);
@@ -89,14 +89,12 @@
   /** Recursos que se ven ahora (el servidor guarda; aquí se anima el desgaste). */
   function recursos() {
     const j = J.estado.jugador, r = J.estado.reloj;
-    let e = Number(j.energia), c = Number(j.comida);
-    if (j.estado !== 'fantasma' && r.estado === 'corriendo') {
+    let e = Number(j.energia);
+    if (r.estado === 'corriendo') {
       const dt = Math.max(0, segJuego() - Number(j.ref_seg));
-      const tasa = Number(r.desgaste_por_min) / 60;
-      e = Math.max(0, e - tasa * dt - J.distancia / 1000 * Number(r.energia_por_1000px));
-      c = Math.max(0, c - tasa * dt);
+      e = Math.min(100, e + Number(r.recarga_por_min || 0) / 60 * dt);
     }
-    return { energia: e, comida: c, datos: j.datos, monedas: j.monedas };
+    return { energia: e, bolsa: j.bolsa || {} };
   }
 
   async function pedirEstado() {
@@ -120,16 +118,7 @@
     } catch (e) { /* sin conexión: seguimos y lo intentamos luego */ }
   }
 
-  function revisarCero() {
-    if (!J.estado) return;
-    const j = J.estado.jugador;
-    if (j.estado !== 'vivo' || J.estado.reloj.estado !== 'corriendo') return;
-    const r = recursos();
-    if ((r.energia <= 0 || r.comida <= 0) && Date.now() - J.pidiendoEstado > 8000) {
-      J.pidiendoEstado = Date.now();
-      latido(true);
-    }
-  }
+  function revisarCero() { /* ya no hay rescates */ }
 
   // ------------------------------------------------------------------ acciones
   async function accion(nombre, args, opciones) {
@@ -215,8 +204,8 @@
         // Mi propia fila: se copian los datos sin volver a preguntar al servidor
         if (cambio.nuevo && cambio.nuevo.id === s.jugador.id && J.estado) {
           const n = cambio.nuevo, j = J.estado.jugador, antes = j.estado;
-          ['energia', 'comida', 'datos', 'monedas', 'estado', 'causa', 'ref_seg', 'rescate_hasta_seg',
-           'ultimo_trabajo_seg', 'cultivo_listo_seg', 'misiones_ok', 'megas_gastados', 'consultas'].forEach(k => { if (k in n) j[k] = n[k]; });
+          ['energia', 'bolsa', 'ref_seg', 'ultimo_recolecto_seg', 'huecos_ok', 'fallos',
+           'megas_gastados', 'consultas'].forEach(k => { if (k in n) j[k] = n[k]; });
           if (antes !== j.estado) {
             if (J.escenaActiva && J.escenaActiva.yo) J.escenaActiva.yo.setEstado(j.estado);
             Red.actualizarYo({ estado: j.estado });
@@ -234,6 +223,11 @@
       alCambiar: async () => {
         const islasAntes = J.grupos.map(g => g.isla + ':' + g.territorio).sort().join();
         try { await cargarGrupos(); } catch (e) { return; }
+        const mio = J.gruposPorId.get(J.estado.grupo.id);
+        if (mio && mio.oportunidades !== J.estado.grupo.oportunidades) {
+          J.estado.grupo.oportunidades = mio.oportunidades;
+          Paneles.refrescar('texto');
+        }
         const islasAhora = J.grupos.map(g => g.isla + ':' + g.territorio).sort().join();
         if (islasAntes !== islasAhora) {
           construirMundo();
@@ -262,10 +256,9 @@
     if (!a || a.id <= J.ultimoAvisoId) return;
     J.ultimoAvisoId = a.id;
     if (Date.now() - Date.parse(a.creado_en) > 10 * 60 * 1000) return; // viejos: no los mostramos
-    aviso(a.texto, a.tipo === 'rescate' || a.tipo === 'muerte' ? 'alerta' : 'ok');
+    aviso(a.texto, 'ok');
     HUD.registrar(a.texto);
-    pedirEstado();
-    if (a.tipo === 'rescate' || a.tipo === 'muerte') cargarMiembros().catch(() => {});
+    pedirEstado().then(() => { Paneles.refrescar('texto'); Paneles.refrescar('pistas'); });
   }
 
   // ------------------------------------------------------------------ arranque
@@ -340,7 +333,7 @@
     if (EMOTES[e.key] && J.escenaActiva && J.escenaActiva.yo) {
       J.escenaActiva.yo.mostrarEmote(EMOTES[e.key]);
       Red.emote(EMOTES[e.key]);
-    } else if (e.key === 'm' || e.key === 'M') Paneles.abrir('misiones', {});
+    } else if (e.key === 'm' || e.key === 'M') Paneles.abrir('texto', {});
     else if (e.key === 'g' || e.key === 'G') Paneles.abrir('grupo', {});
     else if (e.key === 'h' || e.key === 'H' || e.key === '?') Paneles.abrir('ayuda', {});
   }
@@ -371,7 +364,7 @@
     parametrosTerritorio: t => J.parametros[t] || {},
     esDeMiGrupo: id => J.miembros.has(id),
     yoId: () => J.estado && J.estado.jugador.id,
-    puedeMoverse: () => J.estado && J.estado.jugador.estado !== 'rescate',
+    puedeMoverse: () => !!J.estado,
     movimientoMapa: () => (J.estado && J.estado.config.mov_mapa) || 'normal',
     panelAbierto: () => Paneles.abierto(),
     prompt: t => HUD.prompt(t),

@@ -52,8 +52,8 @@
         <div class="caja"><h2>Ranking</h2><div id="ranking-vivo" class="ranking"></div></div>
       </div>
       <div class="tres-columnas">
-        <div class="caja"><h2>🆘 En rescate</h2><div id="lista-rescate" class="lista-gente"></div></div>
-        <div class="caja"><h2>👻 Fantasmas</h2><div id="lista-muertos" class="lista-gente"></div></div>
+        <div class="caja"><h2>📜 Avance de los textos</h2><div id="lista-avance" class="lista-gente"></div></div>
+        <div class="caja"><h2>🎯 Últimas palabras probadas</h2><div id="lista-intentos" class="lista-gente"></div></div>
         <div class="caja"><h2>📜 Lo último que pasó</h2><ul id="bitacora" class="bitacora"></ul></div>
       </div>
     </section>
@@ -91,17 +91,14 @@
         </div>
         <div class="caja">
           <h2>🎚️ Dificultad</h2>
-          <div class="deslizador"><label for="d-desgaste">Velocidad a la que bajan energía y comida <b id="v-desgaste"></b></label>
+          <div class="deslizador"><label for="d-desgaste">Velocidad a la que se recarga la energía <b id="v-desgaste"></b></label>
             <input id="d-desgaste" type="range" min="0.3" max="3" step="0.1"><span class="extremos"><span>Lento</span><span>Rápido</span></span></div>
-          <div class="deslizador"><label for="d-precios">Precios del mercado y la antena <b id="v-precios"></b></label>
-            <input id="d-precios" type="range" min="0.3" max="3" step="0.1"><span class="extremos"><span>Baratos</span><span>Caros</span></span></div>
-          <div class="deslizador"><label for="d-megas">Costo de los megas en el Archivo <b id="v-megas"></b></label>
+          <div class="deslizador"><label for="d-megas">Energía que cuesta consultar la API <b id="v-megas"></b></label>
             <input id="d-megas" type="range" min="0.3" max="3" step="0.1"><span class="extremos"><span>Barato</span><span>Caro</span></span></div>
           <div class="fila-controles">
-            <div class="campo"><label for="d-misiones">Misiones</label>
-              <select id="d-misiones"><option value="facil">Fácil (con la consulta de pista)</option><option value="media">Media (pistas cortas)</option><option value="dificil">Difícil (sin pistas)</option></select></div>
-            <div class="campo"><label for="d-rescate">Minutos para rescatar</label><input id="d-rescate" type="number" min="1" max="240"></div>
+            <div class="campo"><label for="d-oport">Oportunidades con que empieza cada grupo</label><input id="d-oport" type="number" min="0" max="30"></div>
           </div>
+          <p class="subtitulo">Las oportunidades iniciales aplican a los grupos que se creen después de guardar. Para darle oportunidades a un grupo que ya existe, usa «🎁 Regalar al grupo» en la pestaña Grupos.</p>
           <h3>Inscripción y mundo</h3>
           <div class="fila-controles">
             <label class="opcion"><input type="checkbox" id="d-inscripcion"> Inscripción abierta</label>
@@ -110,7 +107,7 @@
             <div class="campo"><label for="d-mov">Movimiento en el mapa</label>
               <select id="d-mov"><option value="normal">Normal</option><option value="ahorro">Ahorro (menos mensajes)</option><option value="apagado">Apagado en el mapa</option></select></div>
           </div>
-          <div class="campo"><label for="d-anuncio">Anuncio para todos (aparece arriba en el juego)</label><input id="d-anuncio" maxlength="200" placeholder="Ej.: ¡Quedan 10 minutos! Ayuden a quienes están en rescate."></div>
+          <div class="campo"><label for="d-anuncio">Anuncio para todos (aparece arriba en el juego)</label><input id="d-anuncio" maxlength="200" placeholder="Ej.: ¡Quedan 10 minutos! Comercien en el Mercado Central."></div>
           <button class="boton grande solo-admin" id="guardar-config">Guardar ajustes</button>
         </div>
       </div>
@@ -135,14 +132,14 @@
 
     <!-- COMERCIO -->
     <section data-seccion="comercio" hidden>
-      <div class="caja"><h2>Ofertas en las plazas</h2><div id="ofertas" class="tabla-scroll"></div></div>
+      <div class="caja"><h2>Ofertas en el Mercado Central</h2><div id="ofertas" class="tabla-scroll"></div></div>
     </section>
 
     <!-- REPORTE -->
     <section data-seccion="reporte" hidden>
       <div class="caja">
         <h2>📄 Reporte por estudiante</h2>
-        <p>Descarga un archivo CSV que abre en Excel o Google Sheets: grupo, territorio, recursos finales, misiones, megas gastados, consultas, intercambios, ayudas, si murió, cuándo, por qué y quiénes pudieron ayudar.</p>
+        <p>Descarga un archivo CSV que abre en Excel o Google Sheets: grupo, territorio, tema, huecos que llenó el grupo y cada estudiante, intentos fallidos, consultas, energía gastada, productos, intercambios, ayudas y oportunidades armadas.</p>
         <div class="fila-controles">
           <button class="boton grande" id="descargar-csv">⬇ Descargar reporte CSV</button>
           <a class="boton grande sol" href="final.html" target="_blank" rel="noopener">🏁 Abrir pantalla final</a>
@@ -164,7 +161,7 @@
         </div>
         <div class="caja solo-admin-caja">
           <h2>♻️ Reiniciar el mundo</h2>
-          <p>Borra todos los grupos, jugadores, consultas, ofertas y muertes, y deja el juego esperando. Las cuentas del equipo docente se conservan. <b>No se puede deshacer:</b> descarga antes el reporte.</p>
+          <p>Borra todos los grupos, jugadores, consultas, ofertas y palabras probadas, y deja el juego esperando. Las cuentas del equipo docente se conservan. <b>No se puede deshacer:</b> descarga antes el reporte.</p>
           <div class="campo"><label for="palabra-reinicio">Escribe REINICIAR para confirmar</label><input id="palabra-reinicio" autocomplete="off"></div>
           <button class="boton coral" id="reiniciar">Reiniciar el mundo</button>
         </div>

@@ -113,3 +113,13 @@ body.final { background: linear-gradient(#cfe6ff, #fff1dc) fixed; min-height: 10
 .datos-api b { display: block; font: 800 2rem var(--f-titulo); font-variant-numeric: tabular-nums; }
 .datos-api span { color: var(--tinta-suave); font-weight: 800; }
 .preguntas { margin: 0; padding-left: 1.4rem; display: grid; gap: 8px; font-size: 1.15rem; }
+
+/* Juego de los textos */
+.cuadros-avance { display: flex; gap: 3px; margin-top: 4px; flex-wrap: wrap; }
+.cuadros-avance i { width: 12px; height: 12px; border-radius: 3px; background: #ece4d6; }
+.cuadros-avance i.on { background: #5fbf8a; }
+.modal.ancho { width: min(1000px, 96vw); max-height: 90vh; overflow: auto; }
+.texto-respuestas { line-height: 1.9; background: #fff; border: 2px solid #eadfcd; border-radius: 14px; padding: 12px 14px; }
+.texto-respuestas b { padding: 0 4px; border-radius: 6px; }
+.texto-respuestas b.ok { background: #ddf4e6; color: #1f7a4b; }
+.texto-respuestas b.falta { background: #fff1c9; color: #8a6a00; }

@@ -47,7 +47,10 @@
       this.region = null;
       this.cerca = null;
       this.relojRegion = 0;
-      this.input.on('gameobjectdown', (p, obj) => { if (obj.edificio) this.intentarEntrar(obj.edificio); });
+      this.input.on('gameobjectdown', (p, obj) => {
+        if (p.event && p.event.target && p.event.target !== this.game.canvas) return;
+        if (obj.edificio) this.intentarEntrar(obj.edificio);
+      });
 
       Juego.alEntrarEscena(this, 'mundo', ini);
       this.events.once('shutdown', () => { Red.salir(); this.gente.vaciar(); });
@@ -125,7 +128,7 @@
       g.fillStyle(0xffffff, 1); g.fillCircle(f.x, f.y, f.r + 8);
       g.fillStyle(0x8fd3f0, 1); g.fillCircle(f.x, f.y, f.r);
       emoji(this, f.x, f.y + 22, '⛲', 70).setDepth(f.y);
-      rotulo(this, M.CX, M.CY + M.PLAZA_R + 42, '🎪 Plaza Central', 30).setDepth(5000);
+      rotulo(this, M.CX, M.CY + M.PLAZA_R + 42, '🤝 Plaza Central · aquí se comercia', 30).setDepth(5000);
       // Bancas y faroles
       [[-200, 120, '🪑'], [200, 120, '🪑'], [-150, 220, '🌳'], [150, 220, '🌳'], [-250, -40, '🏮'], [250, -40, '🏮']].forEach(([dx, dy, e]) => {
         emoji(this, M.CX + dx, M.CY + dy, e, 40).setDepth(M.CY + dy);
@@ -145,9 +148,8 @@
         const a = r() * Math.PI * 2, d = r() * (M.ISLA_R - 60);
         g.fillEllipse(c.x + Math.cos(a) * d, c.y + Math.sin(a) * d, 26 + r() * 30, 12 + r() * 10);
       }
-      // Pradito central con la bandera del grupo
-      g.fillStyle(mezclar(terr.color, '#ffffff', 0.55), 1); g.fillCircle(c.x, c.y, 62);
-      emoji(this, c.x, c.y + 18, '🚩', 44).setDepth(c.y + 18);
+      // Pradito central donde está el Archivo
+      g.fillStyle(mezclar(terr.color, '#ffffff', 0.55), 1); g.fillCircle(c.x, c.y, 120);
       if (grupo) {
         rotulo(this, c.x, c.y - M.ISLA_R - 34, grupo.emoji + ' ' + grupo.nombre, 30).setDepth(5000);
         rotulo(this, c.x, c.y - M.ISLA_R - 2, terr.emoji + ' ' + terr.nombre, 20, terr.tinta).setDepth(5000);
@@ -196,13 +198,14 @@
       const terr = grupo ? window.TERRITORIOS[grupo.territorio] : null;
       const x = e.x, y = e.y, w = M.EDIF_W, h = M.EDIF_H;
       const top = y - h * 0.62, base = y + h * 0.38;
+      const NL = M.nombreLugar(e.lugar, grupo && grupo.territorio, grupo && Juego.parametrosTerritorio(grupo.territorio));
       this.add.image(x, top - 22, this.texturaEdificio(e.lugar)).setOrigin(0.5, 0).setDepth(base);
-      emoji(this, x, top + 30, L.emoji, 40).setDepth(base + 1);
-      const nombre = this.add.text(x, base + 4, L.nombre, {
+      emoji(this, x, top + 30, NL.emoji, 40).setDepth(base + 1);
+      const nombre = this.add.text(x, base + 4, NL.nombre, {
         fontSize: '15px', fontFamily: 'Nunito, system-ui, sans-serif', fontStyle: '800', color: '#33405a',
         backgroundColor: '#fffaf0', padding: { x: 8, y: 2 }, resolution: RES_TEXTO
       }).setOrigin(0.5, 0).setDepth(base + 2);
-      if (terr && e.lugar === 'antena') {
+      if (terr && e.lugar === 'consola') {
         const barras = '▂▄▆█'.slice(0, Math.max(1, terr.rasgos[0].nivel));
         this.add.text(x + w / 2 - 6, top - 6, barras, { fontSize: '16px', color: '#3d4b6b', fontStyle: '800', resolution: RES_TEXTO }).setOrigin(1, 0).setDepth(base + 2);
       }
@@ -247,7 +250,8 @@
         this.cerca = cerca;
         if (cerca) {
           const gr = cerca.isla != null ? Juego.grupoPorIsla(cerca.isla) : null;
-          Juego.prompt('Entrar a ' + M.LUGARES[cerca.lugar].nombre + (gr ? ' de ' + gr.emoji + ' ' + gr.nombre : ''));
+          const NL = M.nombreLugar(cerca.lugar, gr && gr.territorio, gr && Juego.parametrosTerritorio(gr.territorio));
+          Juego.prompt('Entrar a ' + NL.nombre + (gr ? ' de ' + gr.emoji + ' ' + gr.nombre : ''));
         } else Juego.prompt(null);
       }
       if (cerca && EscenaComun.usar(this.teclas)) Juego.entrarLugar(cerca, { x: this.yo.x, y: this.yo.y });
